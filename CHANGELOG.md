@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.1...v1.0.2) (2025-09-26)
+
+
+### Bug Fixes
+
+* update package.json exports and change TypeScript module to CommonJS ([d711fb6](https://github.com/abejarano/ts-mongo-criteria/commit/d711fb6e5bab3891a460e5f81efc3bb370e7989a))
+
 # 1.0.0 (2025-09-26)
 
 
