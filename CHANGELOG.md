@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.3...v1.0.4) (2025-09-26)
+
+
+### Bug Fixes
+
+* export OrderType from index and update import path for EnumValueObject ([9891d7f](https://github.com/abejarano/ts-mongo-criteria/commit/9891d7f32444a902f6a2430470232eda6002ec15))
+
 ## [1.0.3](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.2...v1.0.3) (2025-09-26)
 
 
