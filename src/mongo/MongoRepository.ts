@@ -92,24 +92,37 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     return result.upsertedId;
   }
 
-  protected async searchByCriteriaWithProjection<D>(
+  protected async searchByCriteria<D>(
     criteria: Criteria,
-    objectTypeField: string
+    fieldsToExclude: string[] = []
   ): Promise<D[]> {
     this.criteria = criteria
     this.query = this.criteriaConverter.convert(criteria)
 
-    const projection: { [key: string]: any } = {}
-    projection[objectTypeField] = {
-      $slice: [Number(this.query.skip), Number(this.query.limit)],
+    const collection = await this.collection()
+
+    if (fieldsToExclude.length === 0) {
+      const results = await collection
+        .find(this.query.filter as any, {})
+        .sort(this.query.sort)
+        .skip(this.query.skip)
+        .limit(this.query.limit)
+        .toArray()
+
+      return results.map(({ _id, ...rest }) => rest as D);
     }
 
-    const collection = await this.collection()
+    const projection: { [key: string]: 0 } = {}
+    fieldsToExclude.forEach((field) => {
+      projection[field] = 0
+    })
 
     const results = await collection
       .find(this.query.filter as any, { projection })
       .sort(this.query.sort)
-      .toArray();
+      .skip(this.query.skip)
+      .limit(this.query.limit)
+      .toArray()
 
     return results.map(({ _id, ...rest }) => rest as D);
   }
