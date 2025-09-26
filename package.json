@@ -5,13 +5,6 @@
   "description": "Patrón Criteria para consultas MongoDB en TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": "./dist/index.js",
-    "./criteria": "./dist/criteria/index.js",
-    "./mongo": "./dist/mongo/index.js",
-    "./valueObject": "./dist/valueObject/index.js",
-    "./AggregateRoot": "./dist/AggregateRoot.js"
-  },
   "files": [
     "dist"
   ],
