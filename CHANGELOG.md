@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.4...v1.0.5) (2025-09-26)
+
+
+### Bug Fixes
+
+* update package.json exports and normalize TypeScript module casing ([957ca68](https://github.com/abejarano/ts-mongo-criteria/commit/957ca68937244343b3aefec781c81ea4021fbb37))
+
 ## [1.0.4](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.3...v1.0.4) (2025-09-26)
 
 
