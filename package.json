@@ -6,6 +6,24 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {  
+    "./criteria": {
+      "import": "./dist/criteria/index.js",
+      "types": "./dist/criteria/index.d.ts"
+    },
+    "./mongo": {
+      "import": "./dist/mongo/index.js",
+      "types": "./dist/mongo/index.d.ts"
+    },
+    "./valueObject": {
+      "import": "./dist/valueObject/index.js",
+      "types": "./dist/valueObject/index.d.ts"
+    },
+    "./AggregateRoot": {
+      "import": "./dist/AggregateRoot.js",
+      "types": "./dist/AggregateRoot.d.ts"
+    }
+  },
   "files": [
     "dist"
   ],
