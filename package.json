@@ -57,6 +57,7 @@
     "url": "git+https://github.com/abejarano/ts-mongo-criteria.git"
   },
   "publishConfig": {
-    "@abejarano:registry": "https://npm.pkg.github.com"
+    "@abejarano:registry": "https://npm.pkg.github.com",
+    "access": "public"
   }
 }

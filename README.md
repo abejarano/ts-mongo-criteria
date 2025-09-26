@@ -6,40 +6,40 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Una librería TypeScript robusta que implementa el **patrón Criteria** para construir consultas MongoDB de forma fluida, tipada y mantenible. Diseñada siguiendo principios de **Domain-Driven Design (DDD)** y **Clean Architecture**.
+A robust TypeScript library that implements the **Criteria pattern** for building MongoDB queries in a fluent, typed, and maintainable way. Designed following **Domain-Driven Design (DDD)** and **Clean Architecture** principles.
 
-## ✨ Características principales
+## ✨ Main Features
 
-- 🔒 **Completamente tipado** con TypeScript para máxima seguridad
-- 🏗️ **Patrón Criteria** para consultas complejas y reutilizables
-- 🧩 **API fluida** fácil de usar y leer
-- 🎯 **Compatible con MongoDB 6.0+** 
-- 📦 **Zero dependencies** (solo peer dependencies)
-- 🔄 **Paginación automática** con metadata completa
-- ⚡ **Optimizado para performance** 
-- 🧪 **Fácil testing** y mocking
+- 🔒 **Fully typed** with TypeScript for maximum safety
+- 🏗️ **Criteria pattern** for complex and reusable queries
+- 🧩 **Fluent API** easy to use and read
+- 🎯 **Compatible with MongoDB 6.0+** 
+- 📦 **Zero dependencies** (only peer dependencies)
+- 🔄 **Automatic pagination** with complete metadata
+- ⚡ **Performance optimized** 
+- 🧪 **Easy testing** and mocking
 
-## 📦 Instalación
+## 📦 Installation
 
 ```bash
-# Con npm
+# With npm
 npm install @abejarano/ts-mongodb-criteria
 
-# Con yarn
+# With yarn
 yarn add @abejarano/ts-mongodb-criteria
 
-# Con pnpm
+# With pnpm
 pnpm add @abejarano/ts-mongodb-criteria
 ```
 
 ### Peer Dependencies
 
 ```bash
-# Instalar MongoDB driver (requerido)
+# Install MongoDB driver (required)
 npm install mongodb@^6.0.0
 ```
 
-## 🚀 Uso rápido
+## 🚀 Quick Start
 
 ```typescript
 import { 
@@ -50,7 +50,7 @@ import {
   Operator
 } from '@abejarano/ts-mongodb-criteria';
 
-// Crear filtros usando Maps (sintaxis simplificada)
+// Create filters using Maps (simplified syntax)
 const filters = [
   new Map([
     ["field", "status"],
@@ -64,7 +64,7 @@ const filters = [
   ])
 ];
 
-// Crear criteria con filtros múltiples
+// Create criteria with multiple filters
 const criteria = new Criteria(
   Filters.fromValues(filters),
   Order.fromValues("createdAt", OrderTypes.DESC),
@@ -72,64 +72,64 @@ const criteria = new Criteria(
   1   // page
 );
 
-// Usar con MongoRepository
+// Use with MongoRepository
 const users = await userRepository.list(criteria);
 ```
 
-## 🏗️ Arquitectura
+## 🏗️ Architecture
 
-### Componentes principales
+### Main Components
 
-#### 1. **Criteria** - El constructor de consultas
+#### 1. **Criteria** - The query builder
 ```typescript
 const criteria = new Criteria(
-  filters: Filters,    // Conjunto de filtros creado con Filters.fromValues()
-  order: Order,        // Ordenamiento creado con Order.fromValues()
-  limit?: number,      // Límite de resultados
-  page?: number        // Página actual
+  filters: Filters,    // Set of filters created with Filters.fromValues()
+  order: Order,        // Sorting created with Order.fromValues()
+  limit?: number,      // Result limit
+  page?: number        // Current page
 );
 ```
 
-#### 2. **Filters** - Conjunto de filtros
+#### 2. **Filters** - Set of filters
 ```typescript
 const filters = [
   new Map([
-    ["field", "status"],        // Campo a filtrar
-    ["operator", Operator.EQUAL], // Operador de comparación
-    ["value", "active"]         // Valor de comparación
+    ["field", "status"],        // Field to filter
+    ["operator", Operator.EQUAL], // Comparison operator
+    ["value", "active"]         // Comparison value
   ])
 ];
 
 const filtersObject = Filters.fromValues(filters);
 ```
 
-#### 3. **Order** - Ordenamiento
+#### 3. **Order** - Sorting
 ```typescript
-// Crear ordenamiento
+// Create sorting
 const order = Order.fromValues("createdAt", OrderTypes.DESC);
 
-// O usar métodos estáticos
+// Or use static methods
 const ascOrder = Order.asc("name");
 const descOrder = Order.desc("price");
 const noOrder = Order.none();
 ```
 
-## 🔧 Operadores disponibles
+## 🔧 Available Operators
 
-| Operador | Descripción | MongoDB Equivalent |
+| Operator | Description | MongoDB Equivalent |
 |----------|-------------|-------------------|
-| `EQUAL` | Igualdad exacta | `$eq` |
-| `NOT_EQUAL` | Desigualdad | `$ne` |
-| `GT` | Mayor que | `$gt` |
-| `GTE` | Mayor o igual que | `$gte` |
-| `LT` | Menor que | `$lt` |
-| `LTE` | Menor o igual que | `$lte` |
-| `CONTAINS` | Contiene texto | `$regex` |
-| `NOT_CONTAINS` | No contiene texto | `$not: { $regex }` |
+| `EQUAL` | Exact equality | `$eq` |
+| `NOT_EQUAL` | Inequality | `$ne` |
+| `GT` | Greater than | `$gt` |
+| `GTE` | Greater than or equal | `$gte` |
+| `LT` | Less than | `$lt` |
+| `LTE` | Less than or equal | `$lte` |
+| `CONTAINS` | Contains text | `$regex` |
+| `NOT_CONTAINS` | Does not contain text | `$not: { $regex }` |
 
-## 📋 Ejemplos avanzados
+## 📋 Advanced Examples
 
-### Filtros múltiples
+### Multiple Filters
 ```typescript
 const filters = [
   new Map([
@@ -157,23 +157,23 @@ const criteria = new Criteria(
 );
 ```
 
-### Ordenamiento personalizado
+### Custom Sorting
 ```typescript
-// Ordenar por fecha de creación descendente
+// Sort by creation date descending
 const order = Order.fromValues("createdAt", OrderTypes.DESC);
 
-// Ordenar por precio ascendente
+// Sort by price ascending
 const priceOrder = Order.fromValues("price", OrderTypes.ASC);
 
-// Sin ordenamiento específico
+// No specific sorting
 const noOrder = Order.none();
 
-// Métodos de conveniencia
+// Convenience methods
 const descOrder = Order.desc("createdAt");
 const ascOrder = Order.asc("name");
 ```
 
-### Paginación
+### Pagination
 ```typescript
 const filters = [
   new Map([
@@ -186,8 +186,8 @@ const filters = [
 const criteria = new Criteria(
   Filters.fromValues(filters),
   Order.fromValues("createdAt", OrderTypes.DESC),
-  10, // 10 elementos por página
-  2   // página 2
+  10, // 10 elements per page
+  2   // page 2
 );
 
 const result = await repository.list(criteria);
@@ -201,7 +201,7 @@ console.log(paginatedResult);
 // }
 ```
 
-## 🏛️ Implementación de Repository
+## 🏛️ Repository Implementation
 
 ```typescript
 import { MongoRepository, Criteria, Filters, Order, OrderTypes, Operator, AggregateRoot } from '@abejarano/ts-mongodb-criteria';
@@ -264,7 +264,7 @@ class UserRepository extends MongoRepository<User> {
   }
 
   async list(criteria: Criteria): Promise<User[]> {
-    // Implementación específica usando MongoCriteriaConverter
+    // Specific implementation using MongoCriteriaConverter
     return this.searchByCriteria(criteria);
   }
 
@@ -306,7 +306,7 @@ class UserRepository extends MongoRepository<User> {
   }
 }
 
-// Ejemplo de Use Case siguiendo tu patrón
+// Example Use Case following your pattern
 export class FetchUsersList {
   constructor(private readonly userRepository: UserRepository) {}
 
@@ -317,7 +317,7 @@ export class FetchUsersList {
   private prepareCriteria(req: UsersListRequest): Criteria {
     const filters = [];
 
-    // Filtro por status
+    // Status filter
     if (req.status) {
       filters.push(
         new Map([
@@ -328,7 +328,7 @@ export class FetchUsersList {
       );
     }
 
-    // Filtro por edad mínima
+    // Minimum age filter
     if (req.minAge) {
       filters.push(
         new Map([
@@ -339,7 +339,7 @@ export class FetchUsersList {
       );
     }
 
-    // Filtro por término de búsqueda
+    // Search term filter
     if (req.searchTerm) {
       filters.push(
         new Map([
@@ -360,9 +360,9 @@ export class FetchUsersList {
 }
 ```
 
-## ⚡ Performance y mejores prácticas
+## ⚡ Performance and Best Practices
 
-### Índices recomendados
+### Recommended Indexes
 ```javascript
 // MongoDB shell
 db.users.createIndex({ "status": 1, "createdAt": -1 });
@@ -370,9 +370,9 @@ db.products.createIndex({ "category": 1, "price": 1 });
 db.orders.createIndex({ "userId": 1, "status": 1, "createdAt": -1 });
 ```
 
-### Optimización de consultas
+### Query Optimization
 ```typescript
-// ✅ Bueno: Usar límites específicos y filtros eficientes
+// ✅ Good: Use specific limits and efficient filters
 const filters = [
   new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
   new Map([["field", "category"], ["operator", Operator.EQUAL], ["value", "premium"]]),
@@ -386,95 +386,95 @@ const criteria = new Criteria(
   1
 );
 
-// ❌ Evitar: Consultas sin límite o filtros muy amplios
+// ❌ Avoid: Queries without limits or very broad filters
 const badCriteria = new Criteria(
-  Filters.fromValues([]), // Sin filtros
-  Order.none()            // Sin límite ni paginación
+  Filters.fromValues([]), // No filters
+  Order.none()            // No limit or pagination
 );
 
-// ✅ Bueno: Filtros específicos primero (más selectivos)
+// ✅ Good: Specific filters first (more selective)
 const optimizedFilters = [
-  // Filtros de igualdad primero (más selectivos)
+  // Equality filters first (more selective)
   new Map([["field", "userId"], ["operator", Operator.EQUAL], ["value", "12345"]]),
   new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
   
-  // Filtros de rango después
+  // Range filters after
   new Map([["field", "createdAt"], ["operator", Operator.GTE], ["value", "2024-01-01"]]),
   
-  // Filtros de texto al final (menos selectivos)
+  // Text filters last (less selective)
   new Map([["field", "description"], ["operator", Operator.CONTAINS], ["value", "keyword"]])
 ];
 ```
 
-## 🔧 Configuración
+## 🔧 Configuration
 
-### Variables de entorno requeridas
+### Required Environment Variables
 
-La librería usa `MongoClientFactory` que requiere las siguientes variables de entorno:
+The library uses `MongoClientFactory` which requires the following environment variables:
 
 ```bash
 # .env
-MONGO_USER=tu_usuario
-MONGO_PASS=tu_password
-MONGO_SERVER=tu_servidor.mongodb.net
-MONGO_DB=tu_base_de_datos
+MONGO_USER=your_user
+MONGO_PASS=your_password
+MONGO_SERVER=your_server.mongodb.net
+MONGO_DB=your_database
 ```
 
-### Configuración del cliente MongoDB
+### MongoDB Client Configuration
 
 ```typescript
-// El MongoClientFactory automáticamente lee las variables de entorno
-// y construye la URI: mongodb+srv://${MONGO_USER}:${MONGO_PASS}@${MONGO_SERVER}/${MONGO_DB}
+// MongoClientFactory automatically reads environment variables
+// and builds the URI: mongodb+srv://${MONGO_USER}:${MONGO_PASS}@${MONGO_SERVER}/${MONGO_DB}
 
-// No necesitas configuración adicional, solo asegúrate de tener las variables de entorno
+// No additional configuration needed, just make sure you have the environment variables
 import { MongoClientFactory } from '@abejarano/ts-mongodb-criteria';
 
-// El cliente se conecta automáticamente cuando es necesario
+// Client connects automatically when needed
 const client = await MongoClientFactory.createClient();
 
-// Cerrar conexión cuando sea necesario
+// Close connection when necessary
 await MongoClientFactory.closeClient();
 ```
 
-## 🤝 Contribuir
+## 🤝 Contributing
 
-Las contribuciones son bienvenidas! Por favor:
+Contributions are welcome! Please:
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'feat: Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+1. Fork the project
+2. Create a branch for your feature (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ### Conventional Commits
 
-Usamos [Conventional Commits](https://conventionalcommits.org/) para generar automáticamente releases:
+We use [Conventional Commits](https://conventionalcommits.org/) to automatically generate releases:
 
-- `feat:` - Nueva funcionalidad
-- `fix:` - Corrección de bug
-- `docs:` - Documentación
-- `style:` - Formato, espacios, etc.
-- `refactor:` - Refactoring de código
-- `test:` - Añadir tests
-- `chore:` - Tareas de mantenimiento
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation
+- `style:` - Format, spaces, etc.
+- `refactor:` - Code refactoring
+- `test:` - Add tests
+- `chore:` - Maintenance tasks
 
 ## 📋 Roadmap
 
-- [ ] Soporte para agregaciones MongoDB
-- [ ] Query Builder con sintaxis fluida
-- [ ] Caché de consultas
-- [ ] Métricas y logging
-- [ ] Soporte para transacciones
-- [ ] Validación de esquemas
+- [ ] Support for MongoDB aggregations
+- [ ] Query Builder with fluent syntax
+- [ ] Query cache
+- [ ] Metrics and logging
+- [ ] Transaction support
+- [ ] Schema validation
 
-## 📄 Licencia
+## 📄 License
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-## 👨‍💻 Autor
+## 👨‍💻 Author
 
 **Ángel Bejarano** - [angel.bejarano@jaspesoft.com](mailto:angel.bejarano@jaspesoft.com)
 
 ---
 
-⭐️ Si te gusta este proyecto, ¡dale una estrella en GitHub!
+⭐️ If you like this project, give it a star on GitHub!
