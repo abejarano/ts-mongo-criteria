@@ -6,7 +6,7 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {  
+  "exports": {
     "./criteria": {
       "import": "./dist/criteria/index.js",
       "types": "./dist/criteria/index.d.ts"
