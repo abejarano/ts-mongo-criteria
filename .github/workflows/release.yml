@@ -78,17 +78,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
       
-      - name: Release (GitHub only)
+      - name: Release and Publish to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx semantic-release
-      
-      - name: Configure npm for GitHub Packages
+          NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
         run: |
           echo "@abejarano:registry=https://npm.pkg.github.com" >> ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}" >> ~/.npmrc
-      
-      - name: Publish to GitHub Packages
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
+          npx semantic-release

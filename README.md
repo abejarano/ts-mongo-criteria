@@ -1,6 +1,7 @@
 # 🔍 @abejarano/ts-mongodb-criteria
 
 [![npm version](https://badge.fury.io/js/@abejarano%2Fts-mongodb-criteria.svg)](https://www.npmjs.com/package/@abejarano/ts-mongodb-criteria)
+[![GitHub Package](https://img.shields.io/badge/GitHub-Package-blue.svg)](https://github.com/abejarano/ts-mongo-criteria/packages)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
