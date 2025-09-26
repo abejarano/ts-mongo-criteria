@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.5...v1.0.6) (2025-09-26)
+
+
+### Bug Fixes
+
+* update import path for StringValueObject and add index file for exports ([78a9bd2](https://github.com/abejarano/ts-mongo-criteria/commit/78a9bd219950c5c124249afb281484c39291dc56))
+
 ## [1.0.5](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.4...v1.0.5) (2025-09-26)
 
 
