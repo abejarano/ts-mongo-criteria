@@ -7,3 +7,4 @@ export * from "./Criteria";
 export * from "./Filters";
 export * from "./Order";
 export * from "./Paginate";
+export * from "./OrderType";

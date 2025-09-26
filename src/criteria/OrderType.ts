@@ -1,4 +1,4 @@
-import { EnumValueObject } from "../valueObject/EnumValueObject";
+import { EnumValueObject } from "../valueObject";
 import { InvalidArgumentError } from "../exceptions/InvalidArgumentError.exception";
 
 export enum OrderTypes {
