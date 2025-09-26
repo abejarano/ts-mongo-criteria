@@ -3,26 +3,14 @@
   "author": "angel bejarano / angel.bejarano@jaspesoft.com",
   "version": "1.0.1",
   "description": "Patrón Criteria para consultas MongoDB en TypeScript",
-  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    "./criteria": {
-      "import": "./dist/criteria/index.js",
-      "types": "./dist/criteria/index.d.ts"
-    },
-    "./mongo": {
-      "import": "./dist/mongo/index.js",
-      "types": "./dist/mongo/index.d.ts"
-    },
-    "./valueObject": {
-      "import": "./dist/valueObject/index.js",
-      "types": "./dist/valueObject/index.d.ts"
-    },
-    "./AggregateRoot": {
-      "import": "./dist/AggregateRoot.js",
-      "types": "./dist/AggregateRoot.d.ts"
-    }
+    ".": "./dist/index.js",
+    "./criteria": "./dist/criteria/index.js",
+    "./mongo": "./dist/mongo/index.js",
+    "./valueObject": "./dist/valueObject/index.js",
+    "./AggregateRoot": "./dist/AggregateRoot.js"
   },
   "files": [
     "dist"
