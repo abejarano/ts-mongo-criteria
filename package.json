@@ -1,7 +1,7 @@
 {
   "name": "@abejarano/ts-mongodb-criteria",
   "author": "angel bejarano / angel.bejarano@jaspesoft.com",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Patrón Criteria para consultas MongoDB en TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
