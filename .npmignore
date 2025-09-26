@@ -1,0 +1,49 @@
+# Source files
+src/
+*.ts
+tsconfig.json
+
+# Development dependencies
+node_modules/
+.yarn/
+
+# Tests
+test/
+tests/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Development tools
+.github/
+.vscode/
+.idea/
+
+# Linting and formatting
+.eslintrc*
+.prettierrc*
+.prettierignore
+.editorconfig
+
+# Documentation (optional, keep README.md)
+docs/
+*.md
+!README.md
+
+# Build tools
+*.config.js
+*.config.ts
+rollup.config.*
+webpack.config.*
+
+# Environment and OS files
+.env*
+.DS_Store
+Thumbs.db
+
+# Logs and runtime files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

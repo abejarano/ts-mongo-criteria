@@ -1,0 +1,55 @@
+{
+  "name": "@abejarano/ts-mongodb-criteria",
+  "author": "angel bejarano / angel.bejarano@jaspesoft.com",
+  "version": "0.1.0",
+  "description": "Patrón Criteria para consultas MongoDB en TypeScript",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "prepare": "yarn build",
+    "prebuild": "yarn clean",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepack": "yarn build",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "mongodb",
+    "criteria",
+    "query",
+    "typescript"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/mongodb": "^4.0.7",
+    "@types/node": "^24.5.2",
+    "mongodb": "^6.20.0",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.2",
+    "semantic-release": "^22.0.5",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.12",
+    "ts-jest": "^29.1.2"
+  },
+  "peerDependencies": {
+    "mongodb": ">=6"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
