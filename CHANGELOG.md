@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.6...v1.0.7) (2025-09-29)
+
+
+### Bug Fixes
+
+* refactor updateOne method to use filter and update parameters, improve collection type handling ([76700eb](https://github.com/abejarano/ts-mongo-criteria/commit/76700ebedb52dc9320d12b1518d6866a61e18ee8))
+
 ## [1.0.6](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.5...v1.0.6) (2025-09-26)
 
 
