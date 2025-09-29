@@ -2,7 +2,7 @@ import { MongoCriteriaConverter, MongoQuery } from "./MongoCriteriaConverter";
 import { MongoClientFactory } from "./MongoClientFactory";
 import { Criteria, Paginate } from "../criteria";
 import { AggregateRoot } from "../AggregateRoot";
-import { Collection, ObjectId } from "mongodb";
+import { Collection, ObjectId, UpdateFilter } from "mongodb";
 
 export abstract class MongoRepository<T extends AggregateRoot> {
   private criteriaConverter: MongoCriteriaConverter;
@@ -53,7 +53,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     };
   }
 
-  protected async collection(): Promise<Collection<T>> {
+  protected async collection<T extends Document>(): Promise<Collection<T>> {
     return (await MongoClientFactory.createClient())
       .db()
       .collection<T>(this.collectionName());
@@ -71,35 +71,38 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       primitives = aggregateRoot.toPrimitives();
     }
 
-    return await this.updateOne(id, {
-      ...primitives,
-      id: id,
-    });
+    return await this.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          ...primitives,
+          id: id,
+        },
+      },
+    );
   }
 
   protected async updateOne(
-    id: string,
-    document: any,
+    filter: object,
+    update: Document[] | UpdateFilter<any>,
   ): Promise<ObjectId | null> {
     const collection = await this.collection();
 
-    const result = await collection.updateOne(
-      { _id: new ObjectId(id) } as any,
-      { $set: document },
-      { upsert: true },
-    );
+    const result = await collection.updateOne(filter, update, {
+      upsert: true,
+    });
 
     return result.upsertedId;
   }
 
   protected async searchByCriteria<D>(
     criteria: Criteria,
-    fieldsToExclude: string[] = []
+    fieldsToExclude: string[] = [],
   ): Promise<D[]> {
-    this.criteria = criteria
-    this.query = this.criteriaConverter.convert(criteria)
+    this.criteria = criteria;
+    this.query = this.criteriaConverter.convert(criteria);
 
-    const collection = await this.collection()
+    const collection = await this.collection();
 
     if (fieldsToExclude.length === 0) {
       const results = await collection
@@ -107,22 +110,22 @@ export abstract class MongoRepository<T extends AggregateRoot> {
         .sort(this.query.sort)
         .skip(this.query.skip)
         .limit(this.query.limit)
-        .toArray()
+        .toArray();
 
       return results.map(({ _id, ...rest }) => rest as D);
     }
 
-    const projection: { [key: string]: 0 } = {}
+    const projection: { [key: string]: 0 } = {};
     fieldsToExclude.forEach((field) => {
-      projection[field] = 0
-    })
+      projection[field] = 0;
+    });
 
     const results = await collection
       .find(this.query.filter as any, { projection })
       .sort(this.query.sort)
       .skip(this.query.skip)
       .limit(this.query.limit)
-      .toArray()
+      .toArray();
 
     return results.map(({ _id, ...rest }) => rest as D);
   }
