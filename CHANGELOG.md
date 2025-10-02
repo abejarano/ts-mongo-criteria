@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.7...v1.1.0) (2025-10-02)
+
+
+### Features
+
+* implement OR operator support in filters and enhance FilterValue handling ([49fbec2](https://github.com/abejarano/ts-mongo-criteria/commit/49fbec28efd3fcad64b87ba2017ec5618a5286d2))
+
 ## [1.0.7](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.6...v1.0.7) (2025-09-29)
 
 ### Bug Fixes
