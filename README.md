@@ -1,56 +1,110 @@
-# 🔍 @abejarano/ts-mongodb-criteria
+# 🔍 TypeScript MongoDB Criteria Pattern
 
 [![npm version](https://badge.fury.io/js/@abejarano%2Fts-mongodb-criteria.svg)](https://www.npmjs.com/package/@abejarano/ts-mongodb-criteria)
 [![GitHub Package](https://img.shields.io/badge/GitHub-Package-blue.svg)](https://github.com/abejarano/ts-mongo-criteria/packages)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
+[![Tests](https://img.shields.io/badge/Tests-30%2F30%20passing-brightgreen.svg)](#testing)
 
-## The Criteria Pattern
+> A robust, type-safe implementation of the **Criteria Pattern** for MongoDB queries in TypeScript. Build complex database queries dynamically with a fluent, composable API designed following Domain-Driven Design (DDD) and Clean Architecture principles.
 
-The Criteria pattern is a design pattern that allows you to build database queries dynamically and programmatically,
-without the need to write raw SQL.
+## 📚 Table of Contents
 
-This is a robust TypeScript library that implements the **Criteria pattern** for building MongoDB queries in a fluent,
-typed, and maintainable way. Designed following **Domain-Driven Design (DDD)** and **Clean Architecture** principles.
+- [🎯 Overview](#-overview)
+- [✨ Key Features](#-key-features)
+- [📦 Installation](#-installation)
+- [🚀 Quick Start](#-quick-start)
+- [📖 Documentation](#-documentation)
+- [🧪 Testing](#-testing)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-### Main features:
+## 🎯 Overview
 
-- **Dynamic construction**: Enables creating queries based on conditions determined at runtime
-- **Type-safe**: Especially useful in TypeScript to maintain type safety
-- **Reusable**: Criteria can be combined and reused
-- **Separation of concerns**: Separates query-building logic from the data model
+The **Criteria Pattern** is a powerful design pattern that enables dynamic query construction without writing raw database queries. This library provides a type-safe, MongoDB-specific implementation that helps you:
 
-## ✨ Main Features
+- **Build queries dynamically** based on runtime conditions
+- **Maintain type safety** throughout your query construction
+- **Compose and reuse** query components across your application
+- **Separate concerns** between query logic and data models
+- **Test queries easily** with a mockable interface
 
-- 🔒 **Fully typed** with TypeScript for maximum safety
-- 🏗️ **Criteria pattern** for complex and reusable queries
-- 🧩 **Fluent API** easy to use and read
-- 🎯 **Compatible with MongoDB 6.0+**
-- 📦 **Zero dependencies** (only peer dependencies)
-- 🔄 **Automatic pagination** with complete metadata
-- ⚡ **Performance optimized**
-- 🧪 **Easy testing** and mocking
+### What is the Criteria Pattern?
+
+The Criteria pattern encapsulates query logic in a structured, object-oriented way. Instead of building query strings or objects directly, you compose `Criteria` objects that represent your search intentions. This approach provides flexibility, reusability, testability, and type safety.
+
+## ✨ Key Features
+
+### 🔒 **Type Safety First**
+- Full TypeScript support with strict typing
+- Compile-time validation of query structure
+- IntelliSense support for all operations
+
+### 🧩 **Flexible Query Building**
+- Support for all common MongoDB operators (EQUAL, NOT_EQUAL, GT, GTE, LT, LTE, CONTAINS, NOT_CONTAINS)
+- **NEW**: OR operator for complex logical combinations
+- Composable filters that can be combined and reused
+- Dynamic query construction based on runtime conditions
+
+### 📊 **Advanced Querying**
+```typescript
+// Simple equality
+{ status: { $eq: "active" } }
+
+// Complex OR conditions
+{ $or: [
+  { name: { $regex: "john" } },
+  { email: { $regex: "john" } }
+]}
+
+// Range queries
+{ age: { $gte: 18 }, price: { $lte: 999.99 } }
+```
+
+### 🎯 **MongoDB Optimized**
+- Native MongoDB 6.0+ support
+- Efficient query generation
+- Automatic index-friendly query structure
+
+### 📦 **Zero Dependencies**
+- Only peer dependencies (MongoDB driver)
+- Lightweight bundle size
+
+### 🏗️ **Clean Architecture**
+- Repository pattern implementation
+- Domain-driven design principles
+- Separation of concerns
 
 ## 📦 Installation
 
 ```bash
-# With npm
+# Using npm
 npm install @abejarano/ts-mongodb-criteria
 
-# With yarn
+# Using yarn
 yarn add @abejarano/ts-mongodb-criteria
 
-# With pnpm
+# Using pnpm
 pnpm add @abejarano/ts-mongodb-criteria
 ```
 
 ### Peer Dependencies
 
 ```bash
-# Install MongoDB driver (required)
+# MongoDB driver (required)
 npm install mongodb@^6.0.0
+
+# TypeScript (for development)
+npm install -D typescript@^5.0.0
 ```
+
+### System Requirements
+
+- **Node.js**: 20.0.0 or higher
+- **TypeScript**: 5.0.0 or higher (for development)
+- **MongoDB**: 6.0.0 or higher
 
 ## 🚀 Quick Start
 
@@ -59,11 +113,11 @@ import {
   Criteria,
   Filters,
   Order,
-  OrderTypes,
   Operator,
-} from "@abejarano/ts-mongodb-criteria"
+  MongoRepository
+} from "@abejarano/ts-mongodb-criteria";
 
-// Create filters using Maps (simplified syntax)
+// 1. Create filters using a simple Map-based syntax
 const filters = [
   new Map([
     ["field", "status"],
@@ -72,488 +126,168 @@ const filters = [
   ]),
   new Map([
     ["field", "age"],
-    ["operator", Operator.GT],
+    ["operator", Operator.GTE],
     ["value", "18"],
   ]),
-]
+];
 
-// Create criteria with multiple filters
+// 2. Build criteria with filters, sorting, and pagination
 const criteria = new Criteria(
   Filters.fromValues(filters),
-  Order.fromValues("createdAt", OrderTypes.DESC),
+  Order.desc("createdAt"),
   20, // limit
-  1 // page
-)
+  1   // page
+);
 
-// Use with MongoRepository
-const users = await userRepository.list(criteria)
-```
-
-## 🏗️ Architecture
-
-### Main Components
-
-#### 1. **Criteria** - The query builder
-
-```typescript
-const criteria = new Criteria(
-    filters
-:
-Filters,    // Set of filters created with Filters.fromValues()
-    order
-:
-Order,        // Sorting created with Order.fromValues()
-    limit ? : number,      // Result limit
-    page ? : number        // Current page
-)
-;
-```
-
-#### 2. **Filters** - Set of filters
-
-```typescript
-const filters = [
-  new Map([
-    ["field", "status"], // Field to filter
-    ["operator", Operator.EQUAL], // Comparison operator
-    ["value", "active"], // Comparison value
-  ]),
-]
-
-const filtersObject = Filters.fromValues(filters)
-```
-
-#### 3. **Order** - Sorting
-
-```typescript
-// Create sorting
-const order = Order.fromValues("createdAt", OrderTypes.DESC)
-
-// Or use static methods
-const ascOrder = Order.asc("name")
-const descOrder = Order.desc("price")
-const noOrder = Order.none()
-```
-
-## 🔧 Available Operators
-
-| Operator       | Description           | MongoDB Equivalent |
-| -------------- | --------------------- | ------------------ |
-| `EQUAL`        | Exact equality        | `$eq`              |
-| `NOT_EQUAL`    | Inequality            | `$ne`              |
-| `GT`           | Greater than          | `$gt`              |
-| `GTE`          | Greater than or equal | `$gte`             |
-| `LT`           | Less than             | `$lt`              |
-| `LTE`          | Less than or equal    | `$lte`             |
-| `CONTAINS`     | Contains text         | `$regex`           |
-| `NOT_CONTAINS` | Does not contain text | `$not: { $regex }` |
-
-## 📋 Advanced Examples
-
-### Multiple Filters
-
-```typescript
-const filters = [
-  new Map([
-    ["field", "category"],
-    ["operator", Operator.EQUAL],
-    ["value", "electronics"],
-  ]),
-  new Map([
-    ["field", "price"],
-    ["operator", Operator.LTE],
-    ["value", "999.99"],
-  ]),
-  new Map([
-    ["field", "name"],
-    ["operator", Operator.CONTAINS],
-    ["value", "smartphone"],
-  ]),
-]
-
-const criteria = new Criteria(
-  Filters.fromValues(filters),
-  Order.fromValues("price", OrderTypes.ASC),
-  10,
-  1
-)
-```
-
-### Custom Sorting
-
-```typescript
-// Sort by creation date descending
-const order = Order.fromValues("createdAt", OrderTypes.DESC)
-
-// Sort by price ascending
-const priceOrder = Order.fromValues("price", OrderTypes.ASC)
-
-// No specific sorting
-const noOrder = Order.none()
-
-// Convenience methods
-const descOrder = Order.desc("createdAt")
-const ascOrder = Order.asc("name")
-```
-
-### Pagination
-
-```typescript
-const filters = [
-  new Map([
-    ["field", "status"],
-    ["operator", Operator.EQUAL],
-    ["value", "active"],
-  ]),
-]
-
-const criteria = new Criteria(
-  Filters.fromValues(filters),
-  Order.fromValues("createdAt", OrderTypes.DESC),
-  10, // 10 elements per page
-  2 // page 2
-)
-
-const result = await repository.list(criteria)
-const paginatedResult = await repository.paginate(result)
-
-console.log(paginatedResult)
-// {
-//   results: [...],
-//   count: 150,
-//   nextPag: 3
-// }
-```
-
-## 🏛️ Repository Implementation
-
-```typescript
-import {
-  MongoRepository,
-  Criteria,
-  Filters,
-  Order,
-  OrderTypes,
-  Operator,
-  AggregateRoot,
-} from "@abejarano/ts-mongodb-criteria"
-
-class User extends AggregateRoot {
-  constructor(
-    private id: string,
-    private name: string,
-    private email: string,
-    private status: "active" | "inactive",
-    private age: number,
-    private createdAt: Date
-  ) {
-    super()
-  }
-
-  getId(): string {
-    return this.id
-  }
-
-  toPrimitives(): any {
-    return {
-      id: this.id,
-      name: this.name,
-      email: this.email,
-      status: this.status,
-      age: this.age,
-      createdAt: this.createdAt,
-    }
-  }
-
-  // Getters
-  getName(): string {
-    return this.name
-  }
-
-  getEmail(): string {
-    return this.email
-  }
-
-  getStatus(): "active" | "inactive" {
-    return this.status
-  }
-
-  getAge(): number {
-    return this.age
-  }
-
-  getCreatedAt(): Date {
-    return this.createdAt
-  }
-
-  // Business methods
-  isActive(): boolean {
-    return this.status === "active"
-  }
-
-  isAdult(): boolean {
-    return this.age >= 18
-  }
-}
-
-interface UsersListRequest {
-  status?: string
-  minAge?: number
-  searchTerm?: string
-  page?: number
-  perPage?: number
-}
-
+// 3. Use with your MongoDB repository
 class UserRepository extends MongoRepository<User> {
   collectionName(): string {
-    return "users"
-  }
-
-  async list(criteria: Criteria): Promise<User[]> {
-    // Specific implementation using MongoCriteriaConverter
-    return this.searchByCriteria(criteria)
-  }
-
-  async findActiveUsers(
-    page: number = 1,
-    limit: number = 10
-  ): Promise<Paginate<User>> {
-    const filters = [
-      new Map([
-        ["field", "status"],
-        ["operator", Operator.EQUAL],
-        ["value", "active"],
-      ]),
-    ]
-
-    const criteria = new Criteria(
-      Filters.fromValues(filters),
-      Order.fromValues("createdAt", OrderTypes.DESC),
-      limit,
-      page
-    )
-
-    const users = await this.list(criteria)
-    return this.paginate(users)
-  }
-
-  async searchUsers(searchTerm: string): Promise<User[]> {
-    const filters = [
-      new Map([
-        ["field", "name"],
-        ["operator", Operator.CONTAINS],
-        ["value", searchTerm],
-      ]),
-    ]
-
-    const criteria = new Criteria(
-      Filters.fromValues(filters),
-      Order.asc("name")
-    )
-
-    return this.list(criteria)
+    return "users";
   }
 }
 
-// Example Use Case following your pattern
-export class FetchUsersList {
-  constructor(private readonly userRepository: UserRepository) {}
-
-  async run(req: UsersListRequest): Promise<Paginate<User>> {
-    return this.userRepository.list(this.prepareCriteria(req))
-  }
-
-  private prepareCriteria(req: UsersListRequest): Criteria {
-    const filters = []
-
-    // Status filter
-    if (req.status) {
-      filters.push(
-        new Map([
-          ["field", "status"],
-          ["operator", Operator.EQUAL],
-          ["value", req.status],
-        ])
-      )
-    }
-
-    // Minimum age filter
-    if (req.minAge) {
-      filters.push(
-        new Map([
-          ["field", "age"],
-          ["operator", Operator.GTE],
-          ["value", req.minAge.toString()],
-        ])
-      )
-    }
-
-    // Search term filter
-    if (req.searchTerm) {
-      filters.push(
-        new Map([
-          ["field", "name"],
-          ["operator", Operator.CONTAINS],
-          ["value", req.searchTerm],
-        ])
-      )
-    }
-
-    return new Criteria(
-      Filters.fromValues(filters),
-      Order.fromValues("createdAt", OrderTypes.DESC),
-      Number(req.perPage || 10),
-      Number(req.page || 1)
-    )
-  }
-}
+const userRepo = new UserRepository();
+const users = await userRepo.searchByCriteria(criteria);
 ```
 
-## ⚡ Performance and Best Practices
-
-### Recommended Indexes
-
-```javascript
-// MongoDB shell
-db.users.createIndex({ status: 1, createdAt: -1 })
-db.products.createIndex({ category: 1, price: 1 })
-db.orders.createIndex({ userId: 1, status: 1, createdAt: -1 })
-```
-
-### Query Optimization
+**Your First Query in 30 Seconds:**
 
 ```typescript
-// ✅ Good: Use specific limits and efficient filters
-const filters = [
-  new Map([
-    ["field", "status"],
-    ["operator", Operator.EQUAL],
-    ["value", "active"],
+// Find active users over 18, sorted by creation date
+const activeAdultUsers = new Criteria(
+  Filters.fromValues([
+    new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
+    new Map([["field", "age"], ["operator", Operator.GTE], ["value", "18"]])
   ]),
-  new Map([
-    ["field", "category"],
-    ["operator", Operator.EQUAL],
-    ["value", "premium"],
-  ]),
-  new Map([
-    ["field", "name"],
-    ["operator", Operator.CONTAINS],
-    ["value", "search_term"],
-  ]),
-]
+  Order.desc("createdAt"),
+  10, // Get 10 results
+  1   // First page
+);
 
-const criteria = new Criteria(
-  Filters.fromValues(filters),
-  Order.fromValues("createdAt", OrderTypes.DESC),
-  20,
-  1
-)
-
-// ❌ Avoid: Queries without limits or very broad filters
-const badCriteria = new Criteria(
-  Filters.fromValues([]), // No filters
-  Order.none() // No limit or pagination
-)
-
-// ✅ Good: Specific filters first (more selective)
-const optimizedFilters = [
-  // Equality filters first (more selective)
-  new Map([
-    ["field", "userId"],
-    ["operator", Operator.EQUAL],
-    ["value", "12345"],
-  ]),
-  new Map([
-    ["field", "status"],
-    ["operator", Operator.EQUAL],
-    ["value", "active"],
-  ]),
-
-  // Range filters after
-  new Map([
-    ["field", "createdAt"],
-    ["operator", Operator.GTE],
-    ["value", "2024-01-01"],
-  ]),
-
-  // Text filters last (less selective)
-  new Map([
-    ["field", "description"],
-    ["operator", Operator.CONTAINS],
-    ["value", "keyword"],
-  ]),
-]
+const results = await repository.searchByCriteria(activeAdultUsers);
 ```
 
-## 🔧 Configuration
+## 📖 Documentation
 
-### Required Environment Variables
+### 📖 Complete Documentation
 
-The library uses `MongoClientFactory` which requires the following environment variables:
+- **[📘 Quick Start Guide](./docs/quick-start.md)** - Get up and running in minutes
+- **[🏗️ Criteria Pattern Guide](./docs/criteria-pattern.md)** - Deep dive into the pattern, architecture, and theory
+- **[🔧 Operators Reference](./docs/operators.md)** - Complete guide to all available operators and their usage
+- **[⚡ Performance Guide](./docs/performance.md)** - Optimization strategies and best practices
+- **[🔄 Migration Guide](./docs/migration.md)** - Migrate from other query systems to Criteria pattern
+
+### 🎯 Key Concepts
+
+#### 1. **Criteria** - The main query builder
+```typescript
+const criteria = new Criteria(filters, order, limit?, page?)
+```
+
+#### 2. **Filters** - Collection of filter conditions
+```typescript
+const filters = Filters.fromValues([...filterMaps])
+```
+
+#### 3. **Order** - Sorting specification
+```typescript
+const order = Order.desc("createdAt") // or Order.asc("name")
+```
+
+#### 4. **Operators** - Available filter operations
+- `EQUAL`, `NOT_EQUAL` - Exact matching
+- `GT`, `GTE`, `LT`, `LTE` - Range operations  
+- `CONTAINS`, `NOT_CONTAINS` - Text search
+- `OR` - Logical OR combinations
+
+### 🆕 OR Operator Example
+
+```typescript
+import { OrCondition } from "@abejarano/ts-mongodb-criteria";
+
+// Search across multiple fields
+const searchConditions: OrCondition[] = [
+  { field: "name", operator: Operator.CONTAINS, value: "john" },
+  { field: "email", operator: Operator.CONTAINS, value: "john" }
+];
+
+const filters = [
+  new Map<string, string | string[] | OrCondition[]>([
+    ["field", "search"],
+    ["operator", Operator.OR],
+    ["value", searchConditions]
+  ])
+];
+
+// Generates: { $or: [
+//   { name: { $regex: "john" } },
+//   { email: { $regex: "john" } }
+// ]}
+```
+
+## 🧪 Testing
+
+The library includes comprehensive test coverage (30/30 tests passing).
 
 ```bash
-# .env
-MONGO_USER=your_user
-MONGO_PASS=your_password
-MONGO_SERVER=your_server.mongodb.net
-MONGO_DB=your_database
-```
+# Run all tests
+npm test
 
-### MongoDB Client Configuration
+# Run tests in watch mode
+npm run test:watch
 
-```typescript
-// MongoClientFactory automatically reads environment variables
-// and builds the URI: mongodb+srv://${MONGO_USER}:${MONGO_PASS}@${MONGO_SERVER}/${MONGO_DB}
-
-// No additional configuration needed, just make sure you have the environment variables
-import { MongoClientFactory } from "@abejarano/ts-mongodb-criteria"
-
-// Client connects automatically when needed
-const client = await MongoClientFactory.createClient()
-
-// Close connection when necessary
-await MongoClientFactory.closeClient()
+# Run tests with coverage
+npm run test:coverage
 ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please:
+We welcome contributions! Please follow these guidelines:
 
-1. Fork the project
-2. Create a branch for your feature (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### Development Setup
 
-### Conventional Commits
+```bash
+# Clone the repository
+git clone https://github.com/abejarano/ts-mongo-criteria.git
+cd ts-mongo-criteria
 
-We use [Conventional Commits](https://conventionalcommits.org/) to automatically generate releases:
+# Install dependencies
+yarn install
 
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation
-- `style:` - Format, spaces, etc.
-- `refactor:` - Code refactoring
-- `test:` - Add tests
-- `chore:` - Maintenance tasks
+# Run tests
+yarn test
 
-## 📋 Roadmap
+# Build the project
+yarn build
+```
 
-- [ ] Support for MongoDB aggregations
-- [ ] Query Builder with fluent syntax
-- [ ] Query cache
-- [ ] Metrics and logging
-- [ ] Transaction support
-- [ ] Schema validation
+### Contribution Process
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Write** tests for your changes
+4. **Ensure** all tests pass (`yarn test`)
+5. **Commit** using conventional commits (`git commit -m 'feat: add amazing feature'`)
+6. **Push** to your branch (`git push origin feature/amazing-feature`)
+7. **Open** a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
-## 👨‍💻 Author
-
-**Ángel Bejarano** - [angel.bejarano@jaspesoft.com](mailto:angel.bejarano@jaspesoft.com)
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
 ---
 
-⭐️ If you like this project, give it a star on GitHub!
+## 👨‍💻 Author
+
+**Ángel Bejarano**  
+📧 [angel.bejarano@jaspesoft.com](mailto:angel.bejarano@jaspesoft.com)  
+🐙 [GitHub](https://github.com/abejarano)  
+🏢 [Jaspesoft](https://jaspesoft.com)
+
+---
+
+⭐️ **If this project helps you, please give it a star on GitHub!**
+
+🤝 **Questions or suggestions?** Open an issue or start a discussion.
+
+📢 **Follow us** for updates and new features!
