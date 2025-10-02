@@ -61,7 +61,7 @@ import {
   Order,
   OrderTypes,
   Operator,
-} from "@abejarano/ts-mongodb-criteria";
+} from "@abejarano/ts-mongodb-criteria"
 
 // Create filters using Maps (simplified syntax)
 const filters = [
@@ -75,18 +75,18 @@ const filters = [
     ["operator", Operator.GT],
     ["value", "18"],
   ]),
-];
+]
 
 // Create criteria with multiple filters
 const criteria = new Criteria(
   Filters.fromValues(filters),
   Order.fromValues("createdAt", OrderTypes.DESC),
   20, // limit
-  1, // page
-);
+  1 // page
+)
 
 // Use with MongoRepository
-const users = await userRepository.list(criteria);
+const users = await userRepository.list(criteria)
 ```
 
 ## 🏗️ Architecture
@@ -118,21 +118,21 @@ const filters = [
     ["operator", Operator.EQUAL], // Comparison operator
     ["value", "active"], // Comparison value
   ]),
-];
+]
 
-const filtersObject = Filters.fromValues(filters);
+const filtersObject = Filters.fromValues(filters)
 ```
 
 #### 3. **Order** - Sorting
 
 ```typescript
 // Create sorting
-const order = Order.fromValues("createdAt", OrderTypes.DESC);
+const order = Order.fromValues("createdAt", OrderTypes.DESC)
 
 // Or use static methods
-const ascOrder = Order.asc("name");
-const descOrder = Order.desc("price");
-const noOrder = Order.none();
+const ascOrder = Order.asc("name")
+const descOrder = Order.desc("price")
+const noOrder = Order.none()
 ```
 
 ## 🔧 Available Operators
@@ -169,31 +169,31 @@ const filters = [
     ["operator", Operator.CONTAINS],
     ["value", "smartphone"],
   ]),
-];
+]
 
 const criteria = new Criteria(
   Filters.fromValues(filters),
   Order.fromValues("price", OrderTypes.ASC),
   10,
-  1,
-);
+  1
+)
 ```
 
 ### Custom Sorting
 
 ```typescript
 // Sort by creation date descending
-const order = Order.fromValues("createdAt", OrderTypes.DESC);
+const order = Order.fromValues("createdAt", OrderTypes.DESC)
 
 // Sort by price ascending
-const priceOrder = Order.fromValues("price", OrderTypes.ASC);
+const priceOrder = Order.fromValues("price", OrderTypes.ASC)
 
 // No specific sorting
-const noOrder = Order.none();
+const noOrder = Order.none()
 
 // Convenience methods
-const descOrder = Order.desc("createdAt");
-const ascOrder = Order.asc("name");
+const descOrder = Order.desc("createdAt")
+const ascOrder = Order.asc("name")
 ```
 
 ### Pagination
@@ -205,19 +205,19 @@ const filters = [
     ["operator", Operator.EQUAL],
     ["value", "active"],
   ]),
-];
+]
 
 const criteria = new Criteria(
   Filters.fromValues(filters),
   Order.fromValues("createdAt", OrderTypes.DESC),
   10, // 10 elements per page
-  2, // page 2
-);
+  2 // page 2
+)
 
-const result = await repository.list(criteria);
-const paginatedResult = await repository.paginate(result);
+const result = await repository.list(criteria)
+const paginatedResult = await repository.paginate(result)
 
-console.log(paginatedResult);
+console.log(paginatedResult)
 // {
 //   results: [...],
 //   count: 150,
@@ -236,7 +236,7 @@ import {
   OrderTypes,
   Operator,
   AggregateRoot,
-} from "@abejarano/ts-mongodb-criteria";
+} from "@abejarano/ts-mongodb-criteria"
 
 class User extends AggregateRoot {
   constructor(
@@ -245,13 +245,13 @@ class User extends AggregateRoot {
     private email: string,
     private status: "active" | "inactive",
     private age: number,
-    private createdAt: Date,
+    private createdAt: Date
   ) {
-    super();
+    super()
   }
 
   getId(): string {
-    return this.id;
+    return this.id
   }
 
   toPrimitives(): any {
@@ -262,61 +262,61 @@ class User extends AggregateRoot {
       status: this.status,
       age: this.age,
       createdAt: this.createdAt,
-    };
+    }
   }
 
   // Getters
   getName(): string {
-    return this.name;
+    return this.name
   }
 
   getEmail(): string {
-    return this.email;
+    return this.email
   }
 
   getStatus(): "active" | "inactive" {
-    return this.status;
+    return this.status
   }
 
   getAge(): number {
-    return this.age;
+    return this.age
   }
 
   getCreatedAt(): Date {
-    return this.createdAt;
+    return this.createdAt
   }
 
   // Business methods
   isActive(): boolean {
-    return this.status === "active";
+    return this.status === "active"
   }
 
   isAdult(): boolean {
-    return this.age >= 18;
+    return this.age >= 18
   }
 }
 
 interface UsersListRequest {
-  status?: string;
-  minAge?: number;
-  searchTerm?: string;
-  page?: number;
-  perPage?: number;
+  status?: string
+  minAge?: number
+  searchTerm?: string
+  page?: number
+  perPage?: number
 }
 
 class UserRepository extends MongoRepository<User> {
   collectionName(): string {
-    return "users";
+    return "users"
   }
 
   async list(criteria: Criteria): Promise<User[]> {
     // Specific implementation using MongoCriteriaConverter
-    return this.searchByCriteria(criteria);
+    return this.searchByCriteria(criteria)
   }
 
   async findActiveUsers(
     page: number = 1,
-    limit: number = 10,
+    limit: number = 10
   ): Promise<Paginate<User>> {
     const filters = [
       new Map([
@@ -324,17 +324,17 @@ class UserRepository extends MongoRepository<User> {
         ["operator", Operator.EQUAL],
         ["value", "active"],
       ]),
-    ];
+    ]
 
     const criteria = new Criteria(
       Filters.fromValues(filters),
       Order.fromValues("createdAt", OrderTypes.DESC),
       limit,
-      page,
-    );
+      page
+    )
 
-    const users = await this.list(criteria);
-    return this.paginate(users);
+    const users = await this.list(criteria)
+    return this.paginate(users)
   }
 
   async searchUsers(searchTerm: string): Promise<User[]> {
@@ -344,14 +344,14 @@ class UserRepository extends MongoRepository<User> {
         ["operator", Operator.CONTAINS],
         ["value", searchTerm],
       ]),
-    ];
+    ]
 
     const criteria = new Criteria(
       Filters.fromValues(filters),
-      Order.asc("name"),
-    );
+      Order.asc("name")
+    )
 
-    return this.list(criteria);
+    return this.list(criteria)
   }
 }
 
@@ -360,11 +360,11 @@ export class FetchUsersList {
   constructor(private readonly userRepository: UserRepository) {}
 
   async run(req: UsersListRequest): Promise<Paginate<User>> {
-    return this.userRepository.list(this.prepareCriteria(req));
+    return this.userRepository.list(this.prepareCriteria(req))
   }
 
   private prepareCriteria(req: UsersListRequest): Criteria {
-    const filters = [];
+    const filters = []
 
     // Status filter
     if (req.status) {
@@ -373,8 +373,8 @@ export class FetchUsersList {
           ["field", "status"],
           ["operator", Operator.EQUAL],
           ["value", req.status],
-        ]),
-      );
+        ])
+      )
     }
 
     // Minimum age filter
@@ -384,8 +384,8 @@ export class FetchUsersList {
           ["field", "age"],
           ["operator", Operator.GTE],
           ["value", req.minAge.toString()],
-        ]),
-      );
+        ])
+      )
     }
 
     // Search term filter
@@ -395,16 +395,16 @@ export class FetchUsersList {
           ["field", "name"],
           ["operator", Operator.CONTAINS],
           ["value", req.searchTerm],
-        ]),
-      );
+        ])
+      )
     }
 
     return new Criteria(
       Filters.fromValues(filters),
       Order.fromValues("createdAt", OrderTypes.DESC),
       Number(req.perPage || 10),
-      Number(req.page || 1),
-    );
+      Number(req.page || 1)
+    )
   }
 }
 ```
@@ -415,9 +415,9 @@ export class FetchUsersList {
 
 ```javascript
 // MongoDB shell
-db.users.createIndex({ status: 1, createdAt: -1 });
-db.products.createIndex({ category: 1, price: 1 });
-db.orders.createIndex({ userId: 1, status: 1, createdAt: -1 });
+db.users.createIndex({ status: 1, createdAt: -1 })
+db.products.createIndex({ category: 1, price: 1 })
+db.orders.createIndex({ userId: 1, status: 1, createdAt: -1 })
 ```
 
 ### Query Optimization
@@ -440,20 +440,20 @@ const filters = [
     ["operator", Operator.CONTAINS],
     ["value", "search_term"],
   ]),
-];
+]
 
 const criteria = new Criteria(
   Filters.fromValues(filters),
   Order.fromValues("createdAt", OrderTypes.DESC),
   20,
-  1,
-);
+  1
+)
 
 // ❌ Avoid: Queries without limits or very broad filters
 const badCriteria = new Criteria(
   Filters.fromValues([]), // No filters
-  Order.none(), // No limit or pagination
-);
+  Order.none() // No limit or pagination
+)
 
 // ✅ Good: Specific filters first (more selective)
 const optimizedFilters = [
@@ -482,7 +482,7 @@ const optimizedFilters = [
     ["operator", Operator.CONTAINS],
     ["value", "keyword"],
   ]),
-];
+]
 ```
 
 ## 🔧 Configuration
@@ -506,13 +506,13 @@ MONGO_DB=your_database
 // and builds the URI: mongodb+srv://${MONGO_USER}:${MONGO_PASS}@${MONGO_SERVER}/${MONGO_DB}
 
 // No additional configuration needed, just make sure you have the environment variables
-import { MongoClientFactory } from "@abejarano/ts-mongodb-criteria";
+import { MongoClientFactory } from "@abejarano/ts-mongodb-criteria"
 
 // Client connects automatically when needed
-const client = await MongoClientFactory.createClient();
+const client = await MongoClientFactory.createClient()
 
 // Close connection when necessary
-await MongoClientFactory.closeClient();
+await MongoClientFactory.closeClient()
 ```
 
 ## 🤝 Contributing

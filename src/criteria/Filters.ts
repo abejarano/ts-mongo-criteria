@@ -1,20 +1,20 @@
-import { Filter } from "./Filter";
-import { OrCondition } from "./FilterValue";
+import { Filter } from "./Filter"
+import { OrCondition } from "./FilterValue"
 
 export class Filters {
-  readonly filters: Filter[];
+  readonly filters: Filter[]
 
   constructor(filters: Filter[]) {
-    this.filters = filters;
+    this.filters = filters
   }
 
   static fromValues(
-    filters: Array<Map<string, string | string[] | OrCondition[]>>,
+    filters: Array<Map<string, string | string[] | OrCondition[]>>
   ): Filters {
-    return new Filters(filters.map((values) => Filter.fromValues(values)));
+    return new Filters(filters.map((values) => Filter.fromValues(values)))
   }
 
   static none(): Filters {
-    return new Filters([]);
+    return new Filters([])
   }
 }

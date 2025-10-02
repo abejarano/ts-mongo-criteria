@@ -1,4 +1,4 @@
-import { InvalidArgumentError } from "../exceptions/InvalidArgumentError.exception";
+import { InvalidArgumentError } from "../exceptions/InvalidArgumentError.exception"
 
 export enum Operator {
   EQUAL = "=",
@@ -21,14 +21,14 @@ export class FilterOperator {
   static fromValue(value: string): FilterOperator {
     for (const operatorValue of Object.values(Operator)) {
       if (value === operatorValue.toString()) {
-        return new FilterOperator(operatorValue);
+        return new FilterOperator(operatorValue)
       }
     }
 
-    throw new InvalidArgumentError(`The filter operator ${value} is invalid`);
+    throw new InvalidArgumentError(`The filter operator ${value} is invalid`)
   }
 
   protected throwErrorForInvalidValue(value: Operator): void {
-    throw new InvalidArgumentError(`The filter operator ${value} is invalid`);
+    throw new InvalidArgumentError(`The filter operator ${value} is invalid`)
   }
 }

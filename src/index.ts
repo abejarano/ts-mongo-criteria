@@ -1,3 +1,3 @@
-export * from "./criteria";
-export * from "./mongo";
-export * from "./AggregateRoot";
+export * from "./criteria"
+export * from "./mongo"
+export * from "./AggregateRoot"

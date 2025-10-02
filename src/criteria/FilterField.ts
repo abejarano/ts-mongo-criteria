@@ -1,7 +1,7 @@
-import { StringValueObject } from "../valueObject";
+import { StringValueObject } from "../valueObject"
 
 export class FilterField extends StringValueObject {
   constructor(value: string) {
-    super(value);
+    super(value)
   }
 }

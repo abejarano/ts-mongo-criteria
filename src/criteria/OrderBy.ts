@@ -1,15 +1,15 @@
-import { ValueObject } from "../valueObject/ValueObject";
+import { ValueObject } from "../valueObject/ValueObject"
 
 export class OrderBy extends ValueObject<string> {
   constructor(readonly value: string) {
-    super(value);
+    super(value)
   }
 
   static create(value: string): OrderBy {
-    return new OrderBy(value);
+    return new OrderBy(value)
   }
 
   getValue(): string {
-    return this.value;
+    return this.value
   }
 }

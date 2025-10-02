@@ -1,4 +1,4 @@
-import { Filters, Operator } from "../src/criteria";
+import { Filters, Operator } from "../src/criteria"
 
 describe("Filters", () => {
   describe("fromValues", () => {
@@ -14,28 +14,28 @@ describe("Filters", () => {
           ["operator", Operator.GT],
           ["value", "18"],
         ]),
-      ];
+      ]
 
-      const filters = Filters.fromValues(filterMaps);
+      const filters = Filters.fromValues(filterMaps)
 
-      expect(filters.filters).toHaveLength(2);
-      expect(filters.filters[0].field.value).toBe("status");
-      expect(filters.filters[0].operator.value).toBe(Operator.EQUAL);
-      expect(filters.filters[0].value.value).toBe("active");
-    });
+      expect(filters.filters).toHaveLength(2)
+      expect(filters.filters[0].field.value).toBe("status")
+      expect(filters.filters[0].operator.value).toBe(Operator.EQUAL)
+      expect(filters.filters[0].value.value).toBe("active")
+    })
 
     it("should create empty filters from empty array", () => {
-      const filters = Filters.fromValues([]);
+      const filters = Filters.fromValues([])
 
-      expect(filters.filters).toHaveLength(0);
-    });
-  });
+      expect(filters.filters).toHaveLength(0)
+    })
+  })
 
   describe("none", () => {
     it("should create empty filters", () => {
-      const filters = Filters.none();
+      const filters = Filters.none()
 
-      expect(filters.filters).toHaveLength(0);
-    });
-  });
-});
+      expect(filters.filters).toHaveLength(0)
+    })
+  })
+})
