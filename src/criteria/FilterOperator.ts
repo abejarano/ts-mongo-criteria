@@ -9,6 +9,7 @@ export enum Operator {
   NOT_CONTAINS = "NOT_CONTAINS",
   GTE = ">=",
   LTE = "<=",
+  OR = "OR",
 }
 
 //export class FilterOperator extends EnumValueObject<Operator> {

@@ -12,7 +12,7 @@ class TestEntity extends AggregateRoot {
     private id: string,
     private name: string,
     private email: string,
-    private status: string
+    private status: string,
   ) {
     super();
   }
@@ -26,7 +26,7 @@ class TestEntity extends AggregateRoot {
       id: this.id,
       name: this.name,
       email: this.email,
-      status: this.status
+      status: this.status,
     };
   }
 }
@@ -39,17 +39,17 @@ jest.mock("../src/mongo/MongoClientFactory", () => {
     skip: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     toArray: jest.fn(),
-    countDocuments: jest.fn()
+    countDocuments: jest.fn(),
   };
 
   return {
     MongoClientFactory: {
       createClient: jest.fn().mockResolvedValue({
         db: jest.fn().mockReturnValue({
-          collection: jest.fn().mockReturnValue(mockCollection)
-        })
-      })
-    }
+          collection: jest.fn().mockReturnValue(mockCollection),
+        }),
+      }),
+    },
   };
 });
 
@@ -63,41 +63,56 @@ class TestRepository extends MongoRepository<TestEntity> {
   }
 
   collectionName(): string {
-    return 'test_collection';
+    return "test_collection";
   }
 
   // Exponemos el método protegido para testing
-  async testSearchByCriteria<D>(criteria: Criteria, fieldsToExclude: string[] = []): Promise<D[]> {
+  async testSearchByCriteria<D>(
+    criteria: Criteria,
+    fieldsToExclude: string[] = [],
+  ): Promise<D[]> {
     return this.searchByCriteria<D>(criteria, fieldsToExclude);
   }
 }
 
-describe('MongoRepository', () => {
+describe("MongoRepository", () => {
   let repository: TestRepository;
   let mockCollection: any;
 
   beforeEach(async () => {
     repository = new TestRepository();
-    
+
     // Obtener el mock de collection
     const client = await MongoClientFactory.createClient();
     const db = client.db();
-    mockCollection = db.collection('test_collection');
-    
+    mockCollection = db.collection("test_collection");
+
     jest.clearAllMocks();
   });
 
-  describe('searchByCriteria', () => {
-    it('should search with simple criteria without field exclusion', async () => {
+  describe("searchByCriteria", () => {
+    it("should search with simple criteria without field exclusion", async () => {
       // Arrange
       const mockResults = [
-        { _id: 'objectId1', id: '1', name: 'John', email: 'john@test.com', status: 'active' },
-        { _id: 'objectId2', id: '2', name: 'Jane', email: 'jane@test.com', status: 'active' }
+        {
+          _id: "objectId1",
+          id: "1",
+          name: "John",
+          email: "john@test.com",
+          status: "active",
+        },
+        {
+          _id: "objectId2",
+          id: "2",
+          name: "Jane",
+          email: "jane@test.com",
+          status: "active",
+        },
       ];
 
       const expectedResults = [
-        { id: '1', name: 'John', email: 'john@test.com', status: 'active' },
-        { id: '2', name: 'Jane', email: 'jane@test.com', status: 'active' }
+        { id: "1", name: "John", email: "john@test.com", status: "active" },
+        { id: "2", name: "Jane", email: "jane@test.com", status: "active" },
       ];
 
       mockCollection.toArray.mockResolvedValue(mockResults);
@@ -106,15 +121,15 @@ describe('MongoRepository', () => {
         new Map([
           ["field", "status"],
           ["operator", Operator.EQUAL],
-          ["value", "active"]
-        ])
+          ["value", "active"],
+        ]),
       ];
 
       const criteria = new Criteria(
         Filters.fromValues(filters),
         Order.fromValues("name", OrderTypes.ASC),
         10,
-        1
+        1,
       );
 
       // Act
@@ -124,23 +139,23 @@ describe('MongoRepository', () => {
       expect(result).toEqual(expectedResults);
       expect(mockCollection.find).toHaveBeenCalledWith(
         { status: { $eq: "active" } },
-        {}
+        {},
       );
       expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 });
       expect(mockCollection.skip).toHaveBeenCalledWith(0);
       expect(mockCollection.limit).toHaveBeenCalledWith(10);
     });
 
-    it('should search with field exclusion', async () => {
+    it("should search with field exclusion", async () => {
       // Arrange
       const mockResults = [
-        { _id: 'objectId1', id: '1', name: 'John', status: 'active' },
-        { _id: 'objectId2', id: '2', name: 'Jane', status: 'active' }
+        { _id: "objectId1", id: "1", name: "John", status: "active" },
+        { _id: "objectId2", id: "2", name: "Jane", status: "active" },
       ];
 
       const expectedResults = [
-        { id: '1', name: 'John', status: 'active' },
-        { id: '2', name: 'Jane', status: 'active' }
+        { id: "1", name: "John", status: "active" },
+        { id: "2", name: "Jane", status: "active" },
       ];
 
       mockCollection.toArray.mockResolvedValue(mockResults);
@@ -149,41 +164,50 @@ describe('MongoRepository', () => {
         new Map([
           ["field", "status"],
           ["operator", Operator.EQUAL],
-          ["value", "active"]
-        ])
+          ["value", "active"],
+        ]),
       ];
 
       const criteria = new Criteria(
         Filters.fromValues(filters),
         Order.fromValues("name", OrderTypes.ASC),
         10,
-        1
+        1,
       );
 
-      const fieldsToExclude = ['email', 'createdAt'];
+      const fieldsToExclude = ["email", "createdAt"];
 
       // Act
-      const result = await repository.testSearchByCriteria(criteria, fieldsToExclude);
+      const result = await repository.testSearchByCriteria(
+        criteria,
+        fieldsToExclude,
+      );
 
       // Assert
       expect(result).toEqual(expectedResults);
       expect(mockCollection.find).toHaveBeenCalledWith(
         { status: { $eq: "active" } },
-        { projection: { email: 0, createdAt: 0 } }
+        { projection: { email: 0, createdAt: 0 } },
       );
       expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 });
       expect(mockCollection.skip).toHaveBeenCalledWith(0);
       expect(mockCollection.limit).toHaveBeenCalledWith(10);
     });
 
-    it('should handle multiple filters with pagination', async () => {
+    it("should handle multiple filters with pagination", async () => {
       // Arrange
       const mockResults = [
-        { _id: 'objectId3', id: '3', name: 'Bob', email: 'bob@test.com', status: 'active' }
+        {
+          _id: "objectId3",
+          id: "3",
+          name: "Bob",
+          email: "bob@test.com",
+          status: "active",
+        },
       ];
 
       const expectedResults = [
-        { id: '3', name: 'Bob', email: 'bob@test.com', status: 'active' }
+        { id: "3", name: "Bob", email: "bob@test.com", status: "active" },
       ];
 
       mockCollection.toArray.mockResolvedValue(mockResults);
@@ -192,20 +216,20 @@ describe('MongoRepository', () => {
         new Map([
           ["field", "status"],
           ["operator", Operator.EQUAL],
-          ["value", "active"]
+          ["value", "active"],
         ]),
         new Map([
           ["field", "name"],
           ["operator", Operator.CONTAINS],
-          ["value", "Bo"]
-        ])
+          ["value", "Bo"],
+        ]),
       ];
 
       const criteria = new Criteria(
         Filters.fromValues(filters),
         Order.fromValues("createdAt", OrderTypes.DESC),
         5,
-        2 // Segunda página
+        2, // Segunda página
       );
 
       // Act
@@ -214,18 +238,18 @@ describe('MongoRepository', () => {
       // Assert
       expect(result).toEqual(expectedResults);
       expect(mockCollection.find).toHaveBeenCalledWith(
-        { 
+        {
           status: { $eq: "active" },
-          name: { $regex: "Bo" }
+          name: { $regex: "Bo" },
         },
-        {}
+        {},
       );
       expect(mockCollection.sort).toHaveBeenCalledWith({ createdAt: -1 });
       expect(mockCollection.skip).toHaveBeenCalledWith(5); // (page 2 - 1) * limit 5
       expect(mockCollection.limit).toHaveBeenCalledWith(5);
     });
 
-    it('should return empty array when no results found', async () => {
+    it("should return empty array when no results found", async () => {
       // Arrange
       mockCollection.toArray.mockResolvedValue([]);
 
@@ -233,15 +257,15 @@ describe('MongoRepository', () => {
         new Map([
           ["field", "status"],
           ["operator", Operator.EQUAL],
-          ["value", "nonexistent"]
-        ])
+          ["value", "nonexistent"],
+        ]),
       ];
 
       const criteria = new Criteria(
         Filters.fromValues(filters),
         Order.none(),
         10,
-        1
+        1,
       );
 
       // Act
@@ -252,15 +276,13 @@ describe('MongoRepository', () => {
       expect(mockCollection.toArray).toHaveBeenCalled();
     });
 
-    it('should remove _id field from results', async () => {
+    it("should remove _id field from results", async () => {
       // Arrange
       const mockResults = [
-        { _id: 'shouldBeRemoved', id: '1', name: 'Test', data: 'value' }
+        { _id: "shouldBeRemoved", id: "1", name: "Test", data: "value" },
       ];
 
-      const expectedResults = [
-        { id: '1', name: 'Test', data: 'value' }
-      ];
+      const expectedResults = [{ id: "1", name: "Test", data: "value" }];
 
       mockCollection.toArray.mockResolvedValue(mockResults);
 
@@ -268,7 +290,7 @@ describe('MongoRepository', () => {
         Filters.fromValues([]),
         Order.none(),
         10,
-        1
+        1,
       );
 
       // Act
@@ -276,7 +298,7 @@ describe('MongoRepository', () => {
 
       // Assert
       expect(result).toEqual(expectedResults);
-      expect(result[0]).not.toHaveProperty('_id');
+      expect(result[0]).not.toHaveProperty("_id");
     });
   });
 });

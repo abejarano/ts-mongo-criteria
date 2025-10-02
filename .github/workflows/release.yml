@@ -7,41 +7,41 @@ on:
     branches: [main, master]
 
 permissions:
-  contents: write          # Para crear tags, commits y releases
-  issues: write           # Para crear issues en caso de fallos
-  pull-requests: write    # Para PRs automáticos  
-  id-token: write         # Para autenticación
-  packages: write         # Para publicar en GitHub Packages
-  actions: read           # Para leer workflow runs
-  checks: read            # Para leer checks
+  contents: write # Para crear tags, commits y releases
+  issues: write # Para crear issues en caso de fallos
+  pull-requests: write # Para PRs automáticos
+  id-token: write # Para autenticación
+  packages: write # Para publicar en GitHub Packages
+  actions: read # Para leer workflow runs
+  checks: read # Para leer checks
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         node-version: [20.x, 22.x]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'yarn'
-      
+          cache: "yarn"
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      
+
       - name: Build project
         run: yarn build
-      
+
       - name: Run type checking
         run: yarn tsc --noEmit
-      
+
       - name: Run tests
         run: yarn test
 
@@ -49,7 +49,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,27 +57,27 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
           persist-credentials: false
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@abejarano'
-          cache: 'yarn'
-      
+          node-version: "20.x"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@abejarano"
+          cache: "yarn"
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      
+
       - name: Build project
         run: yarn build
-      
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-      
+
       - name: Release and Publish to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

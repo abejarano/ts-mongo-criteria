@@ -1,4 +1,5 @@
 import { Criteria, Filter, Filters, Operator, Order } from "../criteria";
+import { OrCondition } from "../criteria/FilterValue";
 
 type MongoFilterOperator =
   | "$eq"
@@ -7,7 +8,8 @@ type MongoFilterOperator =
   | "$lt"
   | "$regex"
   | "$lte"
-  | "$gte";
+  | "$gte"
+  | "$or";
 
 type MongoFilterBetween = {
   [p: string]: { $gte: Date; $lte: Date };
@@ -18,7 +20,8 @@ type MongoFilterOperation = {
 };
 type MongoFilter =
   | { [field: string]: MongoFilterOperation }
-  | { [field: string]: { $not: MongoFilterOperation } };
+  | { [field: string]: { $not: MongoFilterOperation } }
+  | { $or: any[] };
 type MongoDirection = 1 | -1;
 type MongoSort = { [field: string]: MongoDirection };
 
@@ -52,6 +55,7 @@ export class MongoCriteriaConverter {
       [Operator.NOT_CONTAINS, this.notContainsFilter],
       [Operator.GTE, this.greaterThanOrEqualFilter],
       [Operator.LTE, this.lowerThanOrEqualFilter],
+      [Operator.OR, this.orFilter],
     ]);
   }
 
@@ -121,6 +125,40 @@ export class MongoCriteriaConverter {
     return {
       [filter.field.value]: { $not: { $regex: filter.value.value } },
     };
+  }
+
+  private orFilter(filter: Filter): MongoFilter {
+    if (!filter.value.isOrConditions) {
+      throw new Error("OR operator requires an array of OrCondition objects");
+    }
+
+    const conditions = filter.value.asOrConditions;
+    const orConditions = conditions.map((condition) => {
+      switch (condition.operator) {
+        case Operator.CONTAINS:
+          return { [condition.field]: { $regex: condition.value } };
+        case Operator.EQUAL:
+          return { [condition.field]: { $eq: condition.value } };
+        case Operator.NOT_EQUAL:
+          return { [condition.field]: { $ne: condition.value } };
+        case Operator.GT:
+          return { [condition.field]: { $gt: condition.value } };
+        case Operator.LT:
+          return { [condition.field]: { $lt: condition.value } };
+        case Operator.GTE:
+          return { [condition.field]: { $gte: condition.value } };
+        case Operator.LTE:
+          return { [condition.field]: { $lte: condition.value } };
+        case Operator.NOT_CONTAINS:
+          return { [condition.field]: { $not: { $regex: condition.value } } };
+        default:
+          throw new Error(
+            `Unsupported operator in OR condition: ${condition.operator}`,
+          );
+      }
+    });
+
+    return { $or: orConditions };
   }
 
   private dateRangeFilter(filter: Filter): MongoFilterBetween {

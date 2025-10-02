@@ -1,6 +1,12 @@
-import { MongoCriteriaConverter } from "../src/mongo";
-import { Criteria, Filters, Operator, Order } from "../src/criteria";
-import { OrderTypes } from "../src/criteria/OrderType";
+import {
+  Criteria,
+  Filters,
+  MongoCriteriaConverter,
+  Operator,
+  OrCondition,
+  Order,
+  OrderTypes,
+} from "../src";
 
 describe("MongoCriteriaConverter", () => {
   let converter: MongoCriteriaConverter;
@@ -93,6 +99,143 @@ describe("MongoCriteriaConverter", () => {
       expect(mongoQuery.filter).toEqual({
         name: { $regex: "john" },
         price: { $lte: "100" },
+      });
+    });
+
+    it("should handle OR operator with CONTAINS conditions", () => {
+      const orConditions: OrCondition[] = [
+        { field: "name", operator: Operator.CONTAINS, value: "john" },
+        { field: "description", operator: Operator.CONTAINS, value: "john" },
+      ];
+
+      const filters = [
+        new Map<string, string | string[] | OrCondition[]>([
+          ["field", "search"], // field name is not used for OR operator
+          ["operator", Operator.OR],
+          ["value", orConditions],
+        ]),
+      ];
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none());
+
+      const mongoQuery = converter.convert(criteria);
+
+      expect(mongoQuery.filter).toEqual({
+        $or: [
+          { name: { $regex: "john" } },
+          { description: { $regex: "john" } },
+        ],
+      });
+    });
+
+    it("should handle OR operator with mixed operators", () => {
+      const orConditions: OrCondition[] = [
+        { field: "status", operator: Operator.EQUAL, value: "active" },
+        { field: "priority", operator: Operator.GT, value: "5" },
+        { field: "title", operator: Operator.CONTAINS, value: "urgent" },
+      ];
+
+      const filters = [
+        new Map<string, string | string[] | OrCondition[]>([
+          ["field", "search"],
+          ["operator", Operator.OR],
+          ["value", orConditions],
+        ]),
+      ];
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none());
+
+      const mongoQuery = converter.convert(criteria);
+
+      expect(mongoQuery.filter).toEqual({
+        $or: [
+          { status: { $eq: "active" } },
+          { priority: { $gt: "5" } },
+          { title: { $regex: "urgent" } },
+        ],
+      });
+    });
+
+    it("should handle OR operator with NOT_CONTAINS", () => {
+      const orConditions: OrCondition[] = [
+        { field: "name", operator: Operator.CONTAINS, value: "admin" },
+        { field: "role", operator: Operator.NOT_CONTAINS, value: "guest" },
+      ];
+
+      const filters = [
+        new Map<string, string | string[] | OrCondition[]>([
+          ["field", "search"],
+          ["operator", Operator.OR],
+          ["value", orConditions],
+        ]),
+      ];
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none());
+
+      const mongoQuery = converter.convert(criteria);
+
+      expect(mongoQuery.filter).toEqual({
+        $or: [
+          { name: { $regex: "admin" } },
+          { role: { $not: { $regex: "guest" } } },
+        ],
+      });
+    });
+
+    it("should handle OR operator with comparison operators", () => {
+      const orConditions: OrCondition[] = [
+        { field: "age", operator: Operator.GTE, value: "18" },
+        { field: "experience", operator: Operator.LTE, value: "2" },
+        { field: "score", operator: Operator.NOT_EQUAL, value: "0" },
+      ];
+
+      const filters = [
+        new Map<string, string | string[] | OrCondition[]>([
+          ["field", "search"],
+          ["operator", Operator.OR],
+          ["value", orConditions],
+        ]),
+      ];
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none());
+
+      const mongoQuery = converter.convert(criteria);
+
+      expect(mongoQuery.filter).toEqual({
+        $or: [
+          { age: { $gte: "18" } },
+          { experience: { $lte: "2" } },
+          { score: { $ne: "0" } },
+        ],
+      });
+    });
+
+    it("should combine OR operator with other filters", () => {
+      const orConditions: OrCondition[] = [
+        { field: "name", operator: Operator.CONTAINS, value: "john" },
+        { field: "email", operator: Operator.CONTAINS, value: "john" },
+      ];
+
+      const filters = [
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", "active"],
+        ]),
+        new Map<string, string | string[] | OrCondition[]>([
+          ["field", "search"],
+          ["operator", Operator.OR],
+          ["value", orConditions],
+        ]),
+      ];
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none());
+
+      const mongoQuery = converter.convert(criteria);
+
+      expect(mongoQuery.filter).toEqual({
+        status: { $eq: "active" },
+        $or: [{ name: { $regex: "john" } }, { email: { $regex: "john" } }],
       });
     });
   });

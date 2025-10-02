@@ -1,4 +1,5 @@
 import { Filter } from "./Filter";
+import { OrCondition } from "./FilterValue";
 
 export class Filters {
   readonly filters: Filter[];
@@ -7,10 +8,10 @@ export class Filters {
     this.filters = filters;
   }
 
-  static fromValues(filters: Array<Map<string, string | string[]>>): Filters {
-    return new Filters(
-      filters.map((values) => Filter.fromValues(values as Map<string, string>)),
-    );
+  static fromValues(
+    filters: Array<Map<string, string | string[] | OrCondition[]>>,
+  ): Filters {
+    return new Filters(filters.map((values) => Filter.fromValues(values)));
   }
 
   static none(): Filters {
