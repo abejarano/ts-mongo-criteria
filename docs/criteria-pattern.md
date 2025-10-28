@@ -1,6 +1,7 @@
 # 📋 Understanding the Criteria Pattern
 
 ## Table of Contents
+
 - [What is the Criteria Pattern?](#what-is-the-criteria-pattern)
 - [Benefits](#benefits)
 - [When to Use](#when-to-use)
@@ -20,43 +21,62 @@ The **Criteria Pattern** is a behavioral design pattern that encapsulates query 
 const query = {
   status: { $eq: "active" },
   age: { $gte: 18 },
-  name: { $regex: "john" }
-};
+  name: { $regex: "john" },
+}
 
 // You build this (criteria composition)
 const criteria = new Criteria(
   Filters.fromValues([
-    new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-    new Map([["field", "age"], ["operator", Operator.GTE], ["value", "18"]]),
-    new Map([["field", "name"], ["operator", Operator.CONTAINS], ["value", "john"]])
+    new Map([
+      ["field", "status"],
+      ["operator", Operator.EQUAL],
+      ["value", "active"],
+    ]),
+    new Map([
+      ["field", "age"],
+      ["operator", Operator.GTE],
+      ["value", "18"],
+    ]),
+    new Map([
+      ["field", "name"],
+      ["operator", Operator.CONTAINS],
+      ["value", "john"],
+    ]),
   ]),
   Order.desc("createdAt"),
-  20, 1
-);
+  20,
+  1
+)
 ```
 
 ## Benefits
 
 ### 🔒 **Type Safety**
+
 The pattern provides compile-time validation of your queries:
 
 ```typescript
 // ✅ Type-safe - catches errors at compile time
 const criteria = new Criteria(
   Filters.fromValues([
-    new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
+    new Map([
+      ["field", "status"],
+      ["operator", Operator.EQUAL],
+      ["value", "active"],
+    ]),
   ]),
   Order.desc("createdAt")
-);
+)
 
 // ❌ Raw queries - errors caught at runtime
 const rawQuery = {
   status: { $eq: "active" },
-  createdAt: { $sort: -1 } // Typo: should be in separate sort object
-};
+  createdAt: { $sort: -1 }, // Typo: should be in separate sort object
+}
 ```
 
 ### 🧩 **Composability**
+
 Build complex queries by combining simpler criteria:
 
 ```typescript
@@ -64,119 +84,134 @@ class UserCriteriaBuilder {
   static activeUsers(): Criteria {
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", "active"],
+        ]),
       ]),
       Order.none()
-    );
+    )
   }
 
   static adults(): Criteria {
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", "age"], ["operator", Operator.GTE], ["value", "18"]])
+        new Map([
+          ["field", "age"],
+          ["operator", Operator.GTE],
+          ["value", "18"],
+        ]),
       ]),
       Order.none()
-    );
+    )
   }
 
   static recentlyActive(): Criteria {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", "lastLogin"], ["operator", Operator.GTE], ["value", thirtyDaysAgo.toISOString()]])
+        new Map([
+          ["field", "lastLogin"],
+          ["operator", Operator.GTE],
+          ["value", thirtyDaysAgo.toISOString()],
+        ]),
       ]),
       Order.none()
-    );
+    )
   }
 
   // Combine criteria
   static activeAdultUsers(): Criteria {
     const filters = [
-      ...this.activeUsers().filters.filters.map(f => new Map([
-        ["field", f.field.value],
-        ["operator", f.operator.value],
-        ["value", f.value.value]
-      ])),
-      ...this.adults().filters.filters.map(f => new Map([
-        ["field", f.field.value],
-        ["operator", f.operator.value],
-        ["value", f.value.value]
-      ]))
-    ];
+      ...this.activeUsers().filters.filters.map(
+        (f) =>
+          new Map([
+            ["field", f.field.value],
+            ["operator", f.operator.value],
+            ["value", f.value.value],
+          ])
+      ),
+      ...this.adults().filters.filters.map(
+        (f) =>
+          new Map([
+            ["field", f.field.value],
+            ["operator", f.operator.value],
+            ["value", f.value.value],
+          ])
+      ),
+    ]
 
-    return new Criteria(
-      Filters.fromValues(filters),
-      Order.desc("createdAt")
-    );
+    return new Criteria(Filters.fromValues(filters), Order.desc("createdAt"))
   }
 }
 ```
 
 ### 🔄 **Reusability**
+
 Define common query patterns once and reuse them:
 
 ```typescript
 class CommonCriteria {
   static paginated(page: number, limit: number): Criteria {
-    return new Criteria(
-      Filters.none(),
-      Order.desc("createdAt"),
-      limit,
-      page
-    );
+    return new Criteria(Filters.none(), Order.desc("createdAt"), limit, page)
   }
 
   static search(searchTerm: string, fields: string[]): Criteria {
-    const orConditions: OrCondition[] = fields.map(field => ({
+    const orConditions: OrCondition[] = fields.map((field) => ({
       field,
       operator: Operator.CONTAINS,
-      value: searchTerm
-    }));
+      value: searchTerm,
+    }))
 
     return new Criteria(
       Filters.fromValues([
         new Map<string, string | string[] | OrCondition[]>([
           ["field", "search"],
           ["operator", Operator.OR],
-          ["value", orConditions]
-        ])
+          ["value", orConditions],
+        ]),
       ]),
       Order.none()
-    );
+    )
   }
 
   static dateRange(field: string, startDate: Date, endDate: Date): Criteria {
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", field], ["operator", Operator.GTE], ["value", startDate.toISOString()]]),
-        new Map([["field", field], ["operator", Operator.LTE], ["value", endDate.toISOString()]])
+        new Map([
+          ["field", field],
+          ["operator", Operator.BETWEEN],
+          ["value", { start: startDate, end: endDate }],
+        ]),
       ]),
       Order.none()
-    );
+    )
   }
 }
 ```
 
 ### 🧪 **Testability**
+
 Easily mock and test query logic:
 
 ```typescript
 describe("UserService", () => {
   it("should build correct criteria for active users search", () => {
-    const searchTerm = "john";
-    const criteria = userService.buildSearchCriteria(searchTerm);
-    
-    expect(criteria.hasFilters()).toBe(true);
-    expect(criteria.filters.filters).toHaveLength(2); // status + search
-    expect(criteria.limit).toBe(20);
-  });
+    const searchTerm = "john"
+    const criteria = userService.buildSearchCriteria(searchTerm)
+
+    expect(criteria.hasFilters()).toBe(true)
+    expect(criteria.filters.filters).toHaveLength(2) // status + search
+    expect(criteria.limit).toBe(20)
+  })
 
   it("should handle empty search gracefully", () => {
-    const criteria = userService.buildSearchCriteria("");
-    
-    expect(criteria.filters.filters).toHaveLength(1); // only status filter
-  });
-});
+    const criteria = userService.buildSearchCriteria("")
+
+    expect(criteria.filters.filters).toHaveLength(1) // only status filter
+  })
+})
 ```
 
 ## When to Use
@@ -184,43 +219,83 @@ describe("UserService", () => {
 ### ✅ **Perfect For:**
 
 1. **Dynamic Queries**: When query conditions depend on user input or business rules
+
    ```typescript
    function buildUserSearchCriteria(request: SearchRequest): Criteria {
-     const filters = [];
-     
+     const filters = []
+
      if (request.status) {
-       filters.push(new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", request.status]]));
+       filters.push(
+         new Map([
+           ["field", "status"],
+           ["operator", Operator.EQUAL],
+           ["value", request.status],
+         ])
+       )
      }
-     
+
      if (request.minAge) {
-       filters.push(new Map([["field", "age"], ["operator", Operator.GTE], ["value", request.minAge.toString()]]));
+       filters.push(
+         new Map([
+           ["field", "age"],
+           ["operator", Operator.GTE],
+           ["value", request.minAge.toString()],
+         ])
+       )
      }
-     
+
      if (request.searchTerm) {
        const orConditions: OrCondition[] = [
-         { field: "name", operator: Operator.CONTAINS, value: request.searchTerm },
-         { field: "email", operator: Operator.CONTAINS, value: request.searchTerm }
-       ];
-       filters.push(new Map([["field", "search"], ["operator", Operator.OR], ["value", orConditions]]));
+         {
+           field: "name",
+           operator: Operator.CONTAINS,
+           value: request.searchTerm,
+         },
+         {
+           field: "email",
+           operator: Operator.CONTAINS,
+           value: request.searchTerm,
+         },
+       ]
+       filters.push(
+         new Map([
+           ["field", "search"],
+           ["operator", Operator.OR],
+           ["value", orConditions],
+         ])
+       )
      }
-     
-     return new Criteria(Filters.fromValues(filters), Order.desc("createdAt"));
+
+     return new Criteria(Filters.fromValues(filters), Order.desc("createdAt"))
    }
    ```
 
 2. **Complex Business Logic**: When queries represent business rules
+
    ```typescript
    class SubscriptionCriteria {
      static eligibleForUpgrade(): Criteria {
        // Business rule: Active subscribers with low usage
        return new Criteria(
          Filters.fromValues([
-           new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-           new Map([["field", "plan"], ["operator", Operator.EQUAL], ["value", "basic"]]),
-           new Map([["field", "usage"], ["operator", Operator.LT], ["value", "50"]])
+           new Map([
+             ["field", "status"],
+             ["operator", Operator.EQUAL],
+             ["value", "active"],
+           ]),
+           new Map([
+             ["field", "plan"],
+             ["operator", Operator.EQUAL],
+             ["value", "basic"],
+           ]),
+           new Map([
+             ["field", "usage"],
+             ["operator", Operator.LT],
+             ["value", "50"],
+           ]),
          ]),
          Order.desc("subscriptionDate")
-       );
+       )
      }
    }
    ```
@@ -230,20 +305,30 @@ describe("UserService", () => {
    class ProductRepository extends MongoRepository<Product> {
      async findBestSellers(category?: string): Promise<Product[]> {
        const filters = [
-         new Map([["field", "salesCount"], ["operator", Operator.GTE], ["value", "100"]])
-       ];
-       
+         new Map([
+           ["field", "salesCount"],
+           ["operator", Operator.GTE],
+           ["value", "100"],
+         ]),
+       ]
+
        if (category) {
-         filters.push(new Map([["field", "category"], ["operator", Operator.EQUAL], ["value", category]]));
+         filters.push(
+           new Map([
+             ["field", "category"],
+             ["operator", Operator.EQUAL],
+             ["value", category],
+           ])
+         )
        }
-       
+
        const criteria = new Criteria(
          Filters.fromValues(filters),
          Order.desc("salesCount"),
          20
-       );
-       
-       return this.searchByCriteria(criteria);
+       )
+
+       return this.searchByCriteria(criteria)
      }
    }
    ```
@@ -251,17 +336,22 @@ describe("UserService", () => {
 ### ❌ **Avoid When:**
 
 1. **Simple Static Queries**: When you have fixed, simple queries
+
    ```typescript
    // Overkill for simple queries
    const criteria = new Criteria(
      Filters.fromValues([
-       new Map([["field", "id"], ["operator", Operator.EQUAL], ["value", "123"]])
+       new Map([
+         ["field", "id"],
+         ["operator", Operator.EQUAL],
+         ["value", "123"],
+       ]),
      ]),
      Order.none()
-   );
-   
+   )
+
    // Better: Direct query
-   const user = await collection.findOne({ _id: "123" });
+   const user = await collection.findOne({ _id: "123" })
    ```
 
 2. **Performance Critical Paths**: When you need maximum performance
@@ -297,6 +387,7 @@ describe("UserService", () => {
 ### Component Responsibilities
 
 #### **Criteria**
+
 - **Purpose**: Main entry point that combines all query aspects
 - **Responsibilities**:
   - Hold filter conditions
@@ -305,6 +396,7 @@ describe("UserService", () => {
   - Validate query completeness
 
 #### **Filters**
+
 - **Purpose**: Collection of filter conditions
 - **Responsibilities**:
   - Manage multiple filter conditions
@@ -312,6 +404,7 @@ describe("UserService", () => {
   - Support empty filter sets
 
 #### **Filter**
+
 - **Purpose**: Individual filter condition
 - **Responsibilities**:
   - Encapsulate field, operator, and value
@@ -319,6 +412,7 @@ describe("UserService", () => {
   - Support different value types (including OR conditions)
 
 #### **Order**
+
 - **Purpose**: Sorting specification
 - **Responsibilities**:
   - Define sort field and direction
@@ -336,20 +430,20 @@ The library supports multiple value types for different use cases:
 const stringFilter = new Map([
   ["field", "name"],
   ["operator", Operator.EQUAL],
-  ["value", "john"]
-]);
+  ["value", "john"],
+])
 
 // OR conditions (complex logical operations)
 const orConditions: OrCondition[] = [
   { field: "name", operator: Operator.CONTAINS, value: "john" },
-  { field: "email", operator: Operator.CONTAINS, value: "john" }
-];
+  { field: "email", operator: Operator.CONTAINS, value: "john" },
+]
 
 const orFilter = new Map<string, string | string[] | OrCondition[]>([
   ["field", "search"],
   ["operator", Operator.OR],
-  ["value", orConditions]
-]);
+  ["value", orConditions],
+])
 ```
 
 ### MongoDB Query Generation
@@ -388,15 +482,15 @@ try {
   const invalidFilter = new Map([
     ["field", "name"],
     ["operator", "INVALID_OPERATOR"], // Will throw InvalidArgumentError
-    ["value", "john"]
-  ]);
-  
+    ["value", "john"],
+  ])
+
   const criteria = new Criteria(
     Filters.fromValues([invalidFilter]),
     Order.none()
-  );
+  )
 } catch (error) {
-  console.error(error.message); // "The filter operator INVALID_OPERATOR is invalid"
+  console.error(error.message) // "The filter operator INVALID_OPERATOR is invalid"
 }
 ```
 
@@ -404,52 +498,63 @@ try {
 
 ### vs. Query Builder Pattern
 
-| Criteria Pattern | Query Builder Pattern |
-|------------------|----------------------|
-| Declarative approach | Fluent interface |
-| Immutable objects | Mutable chain |
-| Business-focused | Implementation-focused |
+| Criteria Pattern     | Query Builder Pattern  |
+| -------------------- | ---------------------- |
+| Declarative approach | Fluent interface       |
+| Immutable objects    | Mutable chain          |
+| Business-focused     | Implementation-focused |
 
 ```typescript
 // Criteria Pattern
 const criteria = new Criteria(
   Filters.fromValues([
-    new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
+    new Map([
+      ["field", "status"],
+      ["operator", Operator.EQUAL],
+      ["value", "active"],
+    ]),
   ]),
   Order.desc("createdAt")
-);
+)
 
 // Query Builder Pattern (hypothetical)
-const query = QueryBuilder
-  .select()
+const query = QueryBuilder.select()
   .from("users")
   .where("status", "=", "active")
   .orderBy("createdAt", "desc")
-  .build();
+  .build()
 ```
 
 ### vs. Repository Methods
 
-| Criteria Pattern | Repository Methods |
-|------------------|-------------------|
-| Dynamic composition | Fixed methods |
-| Reusable components | Method proliferation |
-| Type-safe | Method-specific validation |
+| Criteria Pattern    | Repository Methods         |
+| ------------------- | -------------------------- |
+| Dynamic composition | Fixed methods              |
+| Reusable components | Method proliferation       |
+| Type-safe           | Method-specific validation |
 
 ```typescript
 // Criteria Pattern - One method handles all cases
 class UserRepository extends MongoRepository<User> {
   async findByCriteria(criteria: Criteria): Promise<User[]> {
-    return this.searchByCriteria(criteria);
+    return this.searchByCriteria(criteria)
   }
 }
 
 // Repository Methods - Multiple specific methods
 class UserRepository {
-  async findActiveUsers(): Promise<User[]> { /* ... */ }
-  async findAdultUsers(): Promise<User[]> { /* ... */ }
-  async findActiveAdultUsers(): Promise<User[]> { /* ... */ }
-  async findActiveAdultUsersByName(name: string): Promise<User[]> { /* ... */ }
+  async findActiveUsers(): Promise<User[]> {
+    /* ... */
+  }
+  async findAdultUsers(): Promise<User[]> {
+    /* ... */
+  }
+  async findActiveAdultUsers(): Promise<User[]> {
+    /* ... */
+  }
+  async findActiveAdultUsersByName(name: string): Promise<User[]> {
+    /* ... */
+  }
   // Method explosion...
 }
 ```
@@ -460,82 +565,105 @@ class UserRepository {
 
 ```typescript
 interface ProductSearchRequest {
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  searchTerm?: string;
-  inStock?: boolean;
-  sortBy?: 'price' | 'popularity' | 'rating';
-  sortDirection?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
+  category?: string
+  minPrice?: number
+  maxPrice?: number
+  searchTerm?: string
+  inStock?: boolean
+  sortBy?: "price" | "popularity" | "rating"
+  sortDirection?: "asc" | "desc"
+  page?: number
+  limit?: number
 }
 
 class ProductSearchService {
   buildSearchCriteria(request: ProductSearchRequest): Criteria {
-    const filters: Array<Map<string, string | string[] | OrCondition[]>> = [];
+    const filters: Array<Map<string, string | string[] | OrCondition[]>> = []
 
     // Category filter
     if (request.category) {
-      filters.push(new Map([
-        ["field", "category"],
-        ["operator", Operator.EQUAL],
-        ["value", request.category]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "category"],
+          ["operator", Operator.EQUAL],
+          ["value", request.category],
+        ])
+      )
     }
 
     // Price range filters
     if (request.minPrice) {
-      filters.push(new Map([
-        ["field", "price"],
-        ["operator", Operator.GTE],
-        ["value", request.minPrice.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "price"],
+          ["operator", Operator.GTE],
+          ["value", request.minPrice.toString()],
+        ])
+      )
     }
 
     if (request.maxPrice) {
-      filters.push(new Map([
-        ["field", "price"],
-        ["operator", Operator.LTE],
-        ["value", request.maxPrice.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "price"],
+          ["operator", Operator.LTE],
+          ["value", request.maxPrice.toString()],
+        ])
+      )
     }
 
     // Stock filter
     if (request.inStock !== undefined) {
-      filters.push(new Map([
-        ["field", "stockQuantity"],
-        ["operator", request.inStock ? Operator.GT : Operator.EQUAL],
-        ["value", request.inStock ? "0" : "0"]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "stockQuantity"],
+          ["operator", request.inStock ? Operator.GT : Operator.EQUAL],
+          ["value", request.inStock ? "0" : "0"],
+        ])
+      )
     }
 
     // Text search across multiple fields
     if (request.searchTerm) {
       const searchConditions: OrCondition[] = [
-        { field: "name", operator: Operator.CONTAINS, value: request.searchTerm },
-        { field: "description", operator: Operator.CONTAINS, value: request.searchTerm },
-        { field: "brand", operator: Operator.CONTAINS, value: request.searchTerm }
-      ];
+        {
+          field: "name",
+          operator: Operator.CONTAINS,
+          value: request.searchTerm,
+        },
+        {
+          field: "description",
+          operator: Operator.CONTAINS,
+          value: request.searchTerm,
+        },
+        {
+          field: "brand",
+          operator: Operator.CONTAINS,
+          value: request.searchTerm,
+        },
+      ]
 
-      filters.push(new Map([
-        ["field", "search"],
-        ["operator", Operator.OR],
-        ["value", searchConditions]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "search"],
+          ["operator", Operator.OR],
+          ["value", searchConditions],
+        ])
+      )
     }
 
     // Sorting
-    const sortField = request.sortBy || 'createdAt';
-    const sortDirection = request.sortDirection === 'asc' ? OrderTypes.ASC : OrderTypes.DESC;
-    const order = Order.fromValues(sortField, sortDirection);
+    const sortField = request.sortBy || "createdAt"
+    const sortDirection =
+      request.sortDirection === "asc" ? OrderTypes.ASC : OrderTypes.DESC
+    const order = Order.fromValues(sortField, sortDirection)
 
     return new Criteria(
       Filters.fromValues(filters),
       order,
       request.limit || 20,
       request.page || 1
-    );
+    )
   }
 }
 ```
@@ -546,48 +674,58 @@ class ProductSearchService {
 class UserManagementService {
   // Find users for admin dashboard
   buildAdminUsersCriteria(filters: AdminUserFilters): Criteria {
-    const criteriaFilters: Array<Map<string, string | string[] | OrCondition[]>> = [];
+    const criteriaFilters: Array<
+      Map<string, string | string[] | OrCondition[]>
+    > = []
 
     // Role-based access control
     if (filters.roles && filters.roles.length > 0) {
-      const roleConditions: OrCondition[] = filters.roles.map(role => ({
+      const roleConditions: OrCondition[] = filters.roles.map((role) => ({
         field: "role",
         operator: Operator.EQUAL,
-        value: role
-      }));
+        value: role,
+      }))
 
-      criteriaFilters.push(new Map([
-        ["field", "roles"],
-        ["operator", Operator.OR],
-        ["value", roleConditions]
-      ]));
+      criteriaFilters.push(
+        new Map([
+          ["field", "roles"],
+          ["operator", Operator.OR],
+          ["value", roleConditions],
+        ])
+      )
     }
 
     // Account status
     if (filters.status) {
-      criteriaFilters.push(new Map([
-        ["field", "status"],
-        ["operator", Operator.EQUAL],
-        ["value", filters.status]
-      ]));
+      criteriaFilters.push(
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", filters.status],
+        ])
+      )
     }
 
     // Registration date range
     if (filters.registeredAfter) {
-      criteriaFilters.push(new Map([
-        ["field", "createdAt"],
-        ["operator", Operator.GTE],
-        ["value", filters.registeredAfter.toISOString()]
-      ]));
+      criteriaFilters.push(
+        new Map([
+          ["field", "createdAt"],
+          ["operator", Operator.GTE],
+          ["value", filters.registeredAfter.toISOString()],
+        ])
+      )
     }
 
     // Activity filters
     if (filters.lastLoginBefore) {
-      criteriaFilters.push(new Map([
-        ["field", "lastLogin"],
-        ["operator", Operator.LTE],
-        ["value", filters.lastLoginBefore.toISOString()]
-      ]));
+      criteriaFilters.push(
+        new Map([
+          ["field", "lastLogin"],
+          ["operator", Operator.LTE],
+          ["value", filters.lastLoginBefore.toISOString()],
+        ])
+      )
     }
 
     return new Criteria(
@@ -595,30 +733,46 @@ class UserManagementService {
       Order.desc("createdAt"),
       filters.limit || 50,
       filters.page || 1
-    );
+    )
   }
 
   // Find users at risk of churning
   buildChurnRiskCriteria(): Criteria {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
 
     return new Criteria(
       Filters.fromValues([
         // Active subscription
-        new Map([["field", "subscriptionStatus"], ["operator", Operator.EQUAL], ["value", "active"]]),
-        
+        new Map([
+          ["field", "subscriptionStatus"],
+          ["operator", Operator.EQUAL],
+          ["value", "active"],
+        ]),
+
         // Haven't logged in recently
-        new Map([["field", "lastLogin"], ["operator", Operator.LTE], ["value", thirtyDaysAgo.toISOString()]]),
-        
+        new Map([
+          ["field", "lastLogin"],
+          ["operator", Operator.LTE],
+          ["value", thirtyDaysAgo.toISOString()],
+        ]),
+
         // But were active before
-        new Map([["field", "lastLogin"], ["operator", Operator.GTE], ["value", sixtyDaysAgo.toISOString()]]),
-        
+        new Map([
+          ["field", "lastLogin"],
+          ["operator", Operator.GTE],
+          ["value", sixtyDaysAgo.toISOString()],
+        ]),
+
         // High-value customers
-        new Map([["field", "totalSpent"], ["operator", Operator.GTE], ["value", "100"]])
+        new Map([
+          ["field", "totalSpent"],
+          ["operator", Operator.GTE],
+          ["value", "100"],
+        ]),
       ]),
       Order.desc("totalSpent")
-    );
+    )
   }
 }
 ```
@@ -628,32 +782,59 @@ class UserManagementService {
 ```typescript
 class AnalyticsService {
   // Build criteria for conversion funnel analysis
-  buildConversionFunnelCriteria(step: 'visit' | 'signup' | 'purchase', dateRange: DateRange): Criteria {
+  buildConversionFunnelCriteria(
+    step: "visit" | "signup" | "purchase",
+    dateRange: DateRange
+  ): Criteria {
     const filters: Array<Map<string, string | string[] | OrCondition[]>> = [
       // Date range
-      new Map([["field", "createdAt"], ["operator", Operator.GTE], ["value", dateRange.start.toISOString()]]),
-      new Map([["field", "createdAt"], ["operator", Operator.LTE], ["value", dateRange.end.toISOString()]])
-    ];
+      new Map([
+        ["field", "createdAt"],
+        ["operator", Operator.BETWEEN],
+        ["value", { start: dateRange.start, end: dateRange.end }],
+      ]),
+    ]
 
     switch (step) {
-      case 'visit':
-        filters.push(new Map([["field", "eventType"], ["operator", Operator.EQUAL], ["value", "page_view"]]));
-        break;
-      
-      case 'signup':
-        filters.push(new Map([["field", "eventType"], ["operator", Operator.EQUAL], ["value", "user_signup"]]));
-        break;
-      
-      case 'purchase':
-        filters.push(new Map([["field", "eventType"], ["operator", Operator.EQUAL], ["value", "purchase"]]));
-        filters.push(new Map([["field", "amount"], ["operator", Operator.GT], ["value", "0"]]));
-        break;
+      case "visit":
+        filters.push(
+          new Map([
+            ["field", "eventType"],
+            ["operator", Operator.EQUAL],
+            ["value", "page_view"],
+          ])
+        )
+        break
+
+      case "signup":
+        filters.push(
+          new Map([
+            ["field", "eventType"],
+            ["operator", Operator.EQUAL],
+            ["value", "user_signup"],
+          ])
+        )
+        break
+
+      case "purchase":
+        filters.push(
+          new Map([
+            ["field", "eventType"],
+            ["operator", Operator.EQUAL],
+            ["value", "purchase"],
+          ])
+        )
+        filters.push(
+          new Map([
+            ["field", "amount"],
+            ["operator", Operator.GT],
+            ["value", "0"],
+          ])
+        )
+        break
     }
 
-    return new Criteria(
-      Filters.fromValues(filters),
-      Order.asc("createdAt")
-    );
+    return new Criteria(Filters.fromValues(filters), Order.asc("createdAt"))
   }
 }
 ```
@@ -664,50 +845,70 @@ class AnalyticsService {
 
 ```typescript
 class UserCriteriaBuilder {
-  private filters: Array<Map<string, string | string[] | OrCondition[]>> = [];
-  private order: Order = Order.none();
-  private limit?: number;
-  private page?: number;
+  private filters: Array<Map<string, string | string[] | OrCondition[]>> = []
+  private order: Order = Order.none()
+  private limit?: number
+  private page?: number
 
   active(): this {
-    this.filters.push(new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]));
-    return this;
+    this.filters.push(
+      new Map([
+        ["field", "status"],
+        ["operator", Operator.EQUAL],
+        ["value", "active"],
+      ])
+    )
+    return this
   }
 
   ageRange(min?: number, max?: number): this {
     if (min) {
-      this.filters.push(new Map([["field", "age"], ["operator", Operator.GTE], ["value", min.toString()]]));
+      this.filters.push(
+        new Map([
+          ["field", "age"],
+          ["operator", Operator.GTE],
+          ["value", min.toString()],
+        ])
+      )
     }
     if (max) {
-      this.filters.push(new Map([["field", "age"], ["operator", Operator.LTE], ["value", max.toString()]]));
+      this.filters.push(
+        new Map([
+          ["field", "age"],
+          ["operator", Operator.LTE],
+          ["value", max.toString()],
+        ])
+      )
     }
-    return this;
+    return this
   }
 
   search(term: string, fields: string[] = ["name", "email"]): this {
-    const searchConditions: OrCondition[] = fields.map(field => ({
+    const searchConditions: OrCondition[] = fields.map((field) => ({
       field,
       operator: Operator.CONTAINS,
-      value: term
-    }));
+      value: term,
+    }))
 
-    this.filters.push(new Map([
-      ["field", "search"],
-      ["operator", Operator.OR],
-      ["value", searchConditions]
-    ]));
-    return this;
+    this.filters.push(
+      new Map([
+        ["field", "search"],
+        ["operator", Operator.OR],
+        ["value", searchConditions],
+      ])
+    )
+    return this
   }
 
   sortBy(field: string, direction: OrderTypes = OrderTypes.DESC): this {
-    this.order = Order.fromValues(field, direction);
-    return this;
+    this.order = Order.fromValues(field, direction)
+    return this
   }
 
   paginate(page: number, limit: number): this {
-    this.page = page;
-    this.limit = limit;
-    return this;
+    this.page = page
+    this.limit = limit
+    return this
   }
 
   build(): Criteria {
@@ -716,7 +917,7 @@ class UserCriteriaBuilder {
       this.order,
       this.limit,
       this.page
-    );
+    )
   }
 }
 
@@ -727,7 +928,7 @@ const criteria = new UserCriteriaBuilder()
   .search("john", ["name", "email", "phone"])
   .sortBy("createdAt", OrderTypes.DESC)
   .paginate(1, 20)
-  .build();
+  .build()
 ```
 
 ### 2. **Create Domain-Specific Criteria**
@@ -735,28 +936,48 @@ const criteria = new UserCriteriaBuilder()
 ```typescript
 class SubscriptionCriteria {
   static expiringSoon(days: number = 7): Criteria {
-    const expirationDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-    
+    const expirationDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-        new Map([["field", "expiresAt"], ["operator", Operator.LTE], ["value", expirationDate.toISOString()]])
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", "active"],
+        ]),
+        new Map([
+          ["field", "expiresAt"],
+          ["operator", Operator.LTE],
+          ["value", expirationDate.toISOString()],
+        ]),
       ]),
       Order.asc("expiresAt")
-    );
+    )
   }
 
   static eligibleForRenewal(): Criteria {
-    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-        new Map([["field", "expiresAt"], ["operator", Operator.LTE], ["value", thirtyDaysFromNow.toISOString()]]),
-        new Map([["field", "autoRenew"], ["operator", Operator.EQUAL], ["value", "false"]])
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", "active"],
+        ]),
+        new Map([
+          ["field", "expiresAt"],
+          ["operator", Operator.LTE],
+          ["value", thirtyDaysFromNow.toISOString()],
+        ]),
+        new Map([
+          ["field", "autoRenew"],
+          ["operator", Operator.EQUAL],
+          ["value", "false"],
+        ]),
       ]),
       Order.asc("expiresAt")
-    );
+    )
   }
 }
 ```
@@ -770,23 +991,21 @@ describe("UserCriteriaBuilder", () => {
       .active()
       .ageRange(18)
       .sortBy("name", OrderTypes.ASC)
-      .build();
+      .build()
 
-    expect(criteria.hasFilters()).toBe(true);
-    expect(criteria.filters.filters).toHaveLength(2);
-    expect(criteria.order.orderBy.value).toBe("name");
-    expect(criteria.order.orderType.isAsc()).toBe(true);
-  });
+    expect(criteria.hasFilters()).toBe(true)
+    expect(criteria.filters.filters).toHaveLength(2)
+    expect(criteria.order.orderBy.value).toBe("name")
+    expect(criteria.order.orderType.isAsc()).toBe(true)
+  })
 
   it("should handle empty search gracefully", () => {
-    const criteria = new UserCriteriaBuilder()
-      .search("")
-      .build();
+    const criteria = new UserCriteriaBuilder().search("").build()
 
     // Should not add search filter for empty term
-    expect(criteria.filters.filters).toHaveLength(0);
-  });
-});
+    expect(criteria.filters.filters).toHaveLength(0)
+  })
+})
 ```
 
 The Criteria Pattern provides a powerful, flexible way to build database queries while maintaining type safety, reusability, and testability. It's particularly valuable in complex applications where query logic represents important business rules.

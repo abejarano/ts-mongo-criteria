@@ -9,6 +9,7 @@ export enum Operator {
   NOT_CONTAINS = "NOT_CONTAINS",
   GTE = ">=",
   LTE = "<=",
+  BETWEEN = "BETWEEN",
   OR = "OR",
 }
 

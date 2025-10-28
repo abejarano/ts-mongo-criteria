@@ -1,5 +1,6 @@
 import {
   Criteria,
+  FilterInputValue,
   Filters,
   MongoCriteriaConverter,
   Operator,
@@ -102,6 +103,48 @@ describe("MongoCriteriaConverter", () => {
       })
     })
 
+    it("should handle BETWEEN operator with date values", () => {
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-31T23:59:59.999Z")
+
+      const filters = [
+        new Map<string, FilterInputValue>([
+          ["field", "createdAt"],
+          ["operator", Operator.BETWEEN],
+          ["value", { start: startDate, end: endDate }],
+        ]),
+      ]
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none())
+
+      const mongoQuery = converter.convert(criteria)
+
+      expect(mongoQuery.filter).toEqual({
+        createdAt: { $gte: startDate, $lte: endDate },
+      })
+    })
+
+    it("should handle BETWEEN operator with startDate/endDate keys", () => {
+      const startDate = new Date("2023-05-01T00:00:00.000Z")
+      const endDate = new Date("2023-05-31T23:59:59.999Z")
+
+      const filters = [
+        new Map<string, FilterInputValue>([
+          ["field", "createdAt"],
+          ["operator", Operator.BETWEEN],
+          ["value", { startDate, endDate }],
+        ]),
+      ]
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none())
+
+      const mongoQuery = converter.convert(criteria)
+
+      expect(mongoQuery.filter).toEqual({
+        createdAt: { $gte: startDate, $lte: endDate },
+      })
+    })
+
     it("should handle OR operator with CONTAINS conditions", () => {
       const orConditions: OrCondition[] = [
         { field: "name", operator: Operator.CONTAINS, value: "john" },
@@ -109,7 +152,7 @@ describe("MongoCriteriaConverter", () => {
       ]
 
       const filters = [
-        new Map<string, string | string[] | OrCondition[]>([
+        new Map<string, FilterInputValue>([
           ["field", "search"], // field name is not used for OR operator
           ["operator", Operator.OR],
           ["value", orConditions],
@@ -136,7 +179,7 @@ describe("MongoCriteriaConverter", () => {
       ]
 
       const filters = [
-        new Map<string, string | string[] | OrCondition[]>([
+        new Map<string, FilterInputValue>([
           ["field", "search"],
           ["operator", Operator.OR],
           ["value", orConditions],
@@ -163,7 +206,7 @@ describe("MongoCriteriaConverter", () => {
       ]
 
       const filters = [
-        new Map<string, string | string[] | OrCondition[]>([
+        new Map<string, FilterInputValue>([
           ["field", "search"],
           ["operator", Operator.OR],
           ["value", orConditions],
@@ -190,7 +233,7 @@ describe("MongoCriteriaConverter", () => {
       ]
 
       const filters = [
-        new Map<string, string | string[] | OrCondition[]>([
+        new Map<string, FilterInputValue>([
           ["field", "search"],
           ["operator", Operator.OR],
           ["value", orConditions],
@@ -222,7 +265,7 @@ describe("MongoCriteriaConverter", () => {
           ["operator", Operator.EQUAL],
           ["value", "active"],
         ]),
-        new Map<string, string | string[] | OrCondition[]>([
+        new Map<string, FilterInputValue>([
           ["field", "search"],
           ["operator", Operator.OR],
           ["value", orConditions],

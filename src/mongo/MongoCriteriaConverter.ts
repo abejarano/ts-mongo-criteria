@@ -12,9 +12,9 @@ type MongoFilterOperator =
   | "$or"
 
 type MongoFilterBetween = {
-  [p: string]: { $gte: Date; $lte: Date }
+  [p: string]: { $gte: MongoFilterValue; $lte: MongoFilterValue }
 }
-type MongoFilterValue = boolean | string | number
+type MongoFilterValue = boolean | string | number | Date
 type MongoFilterOperation = {
   [operator in MongoFilterOperator]?: MongoFilterValue
 }
@@ -55,6 +55,7 @@ export class MongoCriteriaConverter {
       [Operator.NOT_CONTAINS, this.notContainsFilter],
       [Operator.GTE, this.greaterThanOrEqualFilter],
       [Operator.LTE, this.lowerThanOrEqualFilter],
+      [Operator.BETWEEN, this.betweenFilter],
       [Operator.OR, this.orFilter],
     ])
   }
@@ -161,17 +162,19 @@ export class MongoCriteriaConverter {
     return { $or: orConditions }
   }
 
-  private dateRangeFilter(filter: Filter): MongoFilterBetween {
-    if (!filter.value.value.startDate || !filter.value.value.endDate) {
+  private betweenFilter(filter: Filter): MongoFilterBetween {
+    if (!filter.value.isBetween) {
       throw new Error(
-        "Start and end date are required for date range filtering."
+        "BETWEEN operator requires an object with start and end values."
       )
     }
 
+    const { start, end } = filter.value.asBetween
+
     return {
-      [filter.field.toString()]: {
-        $gte: new Date(filter.value.value.startDate),
-        $lte: new Date(filter.value.value.endDate),
+      [filter.field.value]: {
+        $gte: start,
+        $lte: end,
       },
     }
   }

@@ -51,6 +51,17 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
+      - name: Verify GH_TOKEN secret availability
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "GH_TOKEN secret is empty or unavailable"
+            exit 1
+          else
+            echo "GH_TOKEN secret detected (length: ${#GH_TOKEN})"
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:

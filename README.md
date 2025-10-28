@@ -38,17 +38,20 @@ The Criteria pattern encapsulates query logic in a structured, object-oriented w
 ## ✨ Key Features
 
 ### 🔒 **Type Safety First**
+
 - Full TypeScript support with strict typing
 - Compile-time validation of query structure
 - IntelliSense support for all operations
 
 ### 🧩 **Flexible Query Building**
+
 - Support for all common MongoDB operators (EQUAL, NOT_EQUAL, GT, GTE, LT, LTE, CONTAINS, NOT_CONTAINS)
 - **NEW**: OR operator for complex logical combinations
 - Composable filters that can be combined and reused
 - Dynamic query construction based on runtime conditions
 
 ### 📊 **Advanced Querying**
+
 ```typescript
 // Simple equality
 { status: { $eq: "active" } }
@@ -64,15 +67,18 @@ The Criteria pattern encapsulates query logic in a structured, object-oriented w
 ```
 
 ### 🎯 **MongoDB Optimized**
+
 - Native MongoDB 6.0+ support
 - Efficient query generation
 - Automatic index-friendly query structure
 
 ### 📦 **Zero Dependencies**
+
 - Only peer dependencies (MongoDB driver)
 - Lightweight bundle size
 
 ### 🏗️ **Clean Architecture**
+
 - Repository pattern implementation
 - Domain-driven design principles
 - Separation of concerns
@@ -114,8 +120,8 @@ import {
   Filters,
   Order,
   Operator,
-  MongoRepository
-} from "@abejarano/ts-mongodb-criteria";
+  MongoRepository,
+} from "@abejarano/ts-mongodb-criteria"
 
 // 1. Create filters using a simple Map-based syntax
 const filters = [
@@ -129,25 +135,25 @@ const filters = [
     ["operator", Operator.GTE],
     ["value", "18"],
   ]),
-];
+]
 
 // 2. Build criteria with filters, sorting, and pagination
 const criteria = new Criteria(
   Filters.fromValues(filters),
   Order.desc("createdAt"),
   20, // limit
-  1   // page
-);
+  1 // page
+)
 
 // 3. Use with your MongoDB repository
 class UserRepository extends MongoRepository<User> {
   collectionName(): string {
-    return "users";
+    return "users"
   }
 }
 
-const userRepo = new UserRepository();
-const users = await userRepo.searchByCriteria(criteria);
+const userRepo = new UserRepository()
+const users = await userRepo.searchByCriteria(criteria)
 ```
 
 **Your First Query in 30 Seconds:**
@@ -156,15 +162,23 @@ const users = await userRepo.searchByCriteria(criteria);
 // Find active users over 18, sorted by creation date
 const activeAdultUsers = new Criteria(
   Filters.fromValues([
-    new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-    new Map([["field", "age"], ["operator", Operator.GTE], ["value", "18"]])
+    new Map([
+      ["field", "status"],
+      ["operator", Operator.EQUAL],
+      ["value", "active"],
+    ]),
+    new Map([
+      ["field", "age"],
+      ["operator", Operator.GTE],
+      ["value", "18"],
+    ]),
   ]),
   Order.desc("createdAt"),
   10, // Get 10 results
-  1   // First page
-);
+  1 // First page
+)
 
-const results = await repository.searchByCriteria(activeAdultUsers);
+const results = await repository.searchByCriteria(activeAdultUsers)
 ```
 
 ## 📖 Documentation
@@ -180,49 +194,71 @@ const results = await repository.searchByCriteria(activeAdultUsers);
 ### 🎯 Key Concepts
 
 #### 1. **Criteria** - The main query builder
+
 ```typescript
 const criteria = new Criteria(filters, order, limit?, page?)
 ```
 
 #### 2. **Filters** - Collection of filter conditions
+
 ```typescript
 const filters = Filters.fromValues([...filterMaps])
 ```
 
 #### 3. **Order** - Sorting specification
+
 ```typescript
 const order = Order.desc("createdAt") // or Order.asc("name")
 ```
 
 #### 4. **Operators** - Available filter operations
+
 - `EQUAL`, `NOT_EQUAL` - Exact matching
-- `GT`, `GTE`, `LT`, `LTE` - Range operations  
+- `GT`, `GTE`, `LT`, `LTE` - Range operations
+- `BETWEEN` - Inclusive range with lower and upper bounds
 - `CONTAINS`, `NOT_CONTAINS` - Text search
 - `OR` - Logical OR combinations
 
 ### 🆕 OR Operator Example
 
 ```typescript
-import { OrCondition } from "@abejarano/ts-mongodb-criteria";
+import { OrCondition } from "@abejarano/ts-mongodb-criteria"
 
 // Search across multiple fields
 const searchConditions: OrCondition[] = [
   { field: "name", operator: Operator.CONTAINS, value: "john" },
-  { field: "email", operator: Operator.CONTAINS, value: "john" }
-];
+  { field: "email", operator: Operator.CONTAINS, value: "john" },
+]
 
 const filters = [
-  new Map<string, string | string[] | OrCondition[]>([
+  new Map([
     ["field", "search"],
     ["operator", Operator.OR],
-    ["value", searchConditions]
-  ])
-];
+    ["value", searchConditions],
+  ]),
+]
 
 // Generates: { $or: [
 //   { name: { $regex: "john" } },
 //   { email: { $regex: "john" } }
 // ]}
+```
+
+### ⏱️ BETWEEN Operator Example
+
+```typescript
+// Filter users created between two dates
+const filters = [
+  new Map([
+    ["field", "createdAt"],
+    ["operator", Operator.BETWEEN],
+    ["value", { start: new Date("2024-01-01"), end: new Date("2024-01-31") }],
+  ]),
+]
+
+const criteria = new Criteria(Filters.fromValues(filters), Order.none())
+
+// Generates: { createdAt: { $gte: 2024-01-01, $lte: 2024-01-31 } }
 ```
 
 ## 🧪 Testing

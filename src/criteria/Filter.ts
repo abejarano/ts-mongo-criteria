@@ -1,6 +1,6 @@
 import { FilterField } from "./FilterField"
 import { FilterOperator } from "./FilterOperator"
-import { FilterValue, OrCondition } from "./FilterValue"
+import { FilterInputValue, FilterValue } from "./FilterValue"
 import { InvalidArgumentError } from "../exceptions/InvalidArgumentError.exception"
 
 export class Filter {
@@ -18,9 +18,7 @@ export class Filter {
     this.value = value
   }
 
-  static fromValues(
-    values: Map<string, string | string[] | OrCondition[]>
-  ): Filter {
+  static fromValues(values: Map<string, FilterInputValue>): Filter {
     const field = values.get("field")
     const operator = values.get("operator")
     const value = values.get("value")

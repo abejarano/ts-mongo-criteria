@@ -1,6 +1,7 @@
 # ⚡ Performance Optimization Guide
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [MongoDB Index Strategy](#mongodb-index-strategy)
 - [Query Optimization](#query-optimization)
@@ -31,14 +32,14 @@ Performance optimization with the Criteria pattern involves understanding both M
 ```javascript
 // MongoDB shell commands
 // For EQUAL/NOT_EQUAL operations
-db.users.createIndex({ status: 1 });
-db.users.createIndex({ userId: 1 });
-db.users.createIndex({ email: 1 });
+db.users.createIndex({ status: 1 })
+db.users.createIndex({ userId: 1 })
+db.users.createIndex({ email: 1 })
 
 // For range operations (GT, GTE, LT, LTE)
-db.products.createIndex({ price: 1 });
-db.users.createIndex({ age: 1 });
-db.orders.createIndex({ createdAt: 1 });
+db.products.createIndex({ price: 1 })
+db.users.createIndex({ age: 1 })
+db.orders.createIndex({ createdAt: 1 })
 ```
 
 #### Compound Indexes
@@ -47,25 +48,25 @@ The order of fields in compound indexes matters greatly:
 
 ```javascript
 // For queries with multiple equality filters + sorting
-db.users.createIndex({ 
-  status: 1,      // Equality filter (most selective first)
-  category: 1,    // Equality filter
-  createdAt: -1   // Sort field last
-});
+db.users.createIndex({
+  status: 1, // Equality filter (most selective first)
+  category: 1, // Equality filter
+  createdAt: -1, // Sort field last
+})
 
 // For range queries
 db.products.createIndex({
-  category: 1,    // Equality filter first
-  price: 1,       // Range filter
-  rating: -1      // Sort field
-});
+  category: 1, // Equality filter first
+  price: 1, // Range filter
+  rating: -1, // Sort field
+})
 
 // For user search patterns
 db.users.createIndex({
-  status: 1,      // Most selective
-  age: 1,         // Range filter
-  lastLogin: -1   // Sort/range field
-});
+  status: 1, // Most selective
+  age: 1, // Range filter
+  lastLogin: -1, // Sort/range field
+})
 ```
 
 #### Text Indexes
@@ -74,30 +75,33 @@ For CONTAINS/NOT_CONTAINS operations:
 
 ```javascript
 // Simple text index
-db.products.createIndex({ 
-  name: "text",
-  description: "text" 
-});
-
-// Weighted text index (prioritize certain fields)
 db.products.createIndex({
   name: "text",
   description: "text",
-  brand: "text"
-}, {
-  weights: {
-    name: 10,        // Higher weight for name matches
-    brand: 5,        // Medium weight for brand
-    description: 1   // Lower weight for description
+})
+
+// Weighted text index (prioritize certain fields)
+db.products.createIndex(
+  {
+    name: "text",
+    description: "text",
+    brand: "text",
+  },
+  {
+    weights: {
+      name: 10, // Higher weight for name matches
+      brand: 5, // Medium weight for brand
+      description: 1, // Lower weight for description
+    },
   }
-});
+)
 
 // Compound text index
 db.products.createIndex({
-  category: 1,     // Can filter by category first
-  name: "text",    // Then text search
-  description: "text"
-});
+  category: 1, // Can filter by category first
+  name: "text", // Then text search
+  description: "text",
+})
 ```
 
 ### Index Strategy for Common Criteria Patterns
@@ -106,82 +110,82 @@ db.products.createIndex({
 
 ```javascript
 // For active user lookups
-db.users.createIndex({ status: 1, createdAt: -1 });
+db.users.createIndex({ status: 1, createdAt: -1 })
 
 // For user search functionality
-db.users.createIndex({ 
+db.users.createIndex({
   status: 1,
-  name: "text", 
-  email: "text" 
-});
+  name: "text",
+  email: "text",
+})
 
 // For age-based filtering
-db.users.createIndex({ status: 1, age: 1, createdAt: -1 });
+db.users.createIndex({ status: 1, age: 1, createdAt: -1 })
 
 // For user activity analysis
-db.users.createIndex({ 
-  status: 1, 
-  lastLogin: -1, 
-  totalSpent: -1 
-});
+db.users.createIndex({
+  status: 1,
+  lastLogin: -1,
+  totalSpent: -1,
+})
 ```
 
 #### E-commerce Patterns
 
 ```javascript
 // Product catalog browsing
-db.products.createIndex({ 
-  category: 1, 
-  status: 1, 
-  price: 1 
-});
+db.products.createIndex({
+  category: 1,
+  status: 1,
+  price: 1,
+})
 
 // Product search
 db.products.createIndex({
   status: 1,
   category: 1,
   name: "text",
-  description: "text"
-});
+  description: "text",
+})
 
 // Popular products
-db.products.createIndex({ 
-  status: 1, 
-  category: 1, 
-  popularity: -1 
-});
+db.products.createIndex({
+  status: 1,
+  category: 1,
+  popularity: -1,
+})
 
 // Price-based filtering
-db.products.createIndex({ 
-  category: 1, 
-  status: 1, 
-  price: 1, 
-  rating: -1 
-});
+db.products.createIndex({
+  category: 1,
+  status: 1,
+  price: 1,
+  rating: -1,
+})
 ```
 
 #### Order Management Patterns
 
 ```javascript
 // Order status tracking
-db.orders.createIndex({ 
-  userId: 1, 
-  status: 1, 
-  createdAt: -1 
-});
+db.orders.createIndex({
+  userId: 1,
+  status: 1,
+  createdAt: -1,
+})
 
 // Order value analysis
-db.orders.createIndex({ 
-  status: 1, 
-  totalAmount: -1, 
-  createdAt: -1 
-});
+db.orders.createIndex({
+  status: 1,
+  totalAmount: -1,
+  createdAt: -1,
+})
 
 // Recent orders
-db.orders.createIndex({ 
-  userId: 1, 
-  createdAt: -1 
-});
+db.orders.createIndex({
+  userId: 1,
+  createdAt: -1,
+})
 ```
 
 ## Query Optimization
@@ -194,72 +198,94 @@ The order of filters in your criteria significantly impacts performance:
 // ✅ Optimal filter ordering
 class OptimizedCriteriaBuilder {
   static userSearch(request: UserSearchRequest): Criteria {
-    const filters: Array<Map<string, string | string[] | OrCondition[]>> = [];
+    const filters: Array<Map<string, string | string[] | OrCondition[]>> = []
 
     // 1. Most selective filters first (exact matches)
     if (request.userId) {
-      filters.push(new Map([
-        ["field", "userId"], 
-        ["operator", Operator.EQUAL], 
-        ["value", request.userId]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "userId"],
+          ["operator", Operator.EQUAL],
+          ["value", request.userId],
+        ])
+      )
     }
 
     // 2. High selectivity filters (status, category)
     if (request.status) {
-      filters.push(new Map([
-        ["field", "status"], 
-        ["operator", Operator.EQUAL], 
-        ["value", request.status]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", request.status],
+        ])
+      )
     }
 
     if (request.role) {
-      filters.push(new Map([
-        ["field", "role"], 
-        ["operator", Operator.EQUAL], 
-        ["value", request.role]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "role"],
+          ["operator", Operator.EQUAL],
+          ["value", request.role],
+        ])
+      )
     }
 
     // 3. Range filters (medium selectivity)
     if (request.minAge) {
-      filters.push(new Map([
-        ["field", "age"], 
-        ["operator", Operator.GTE], 
-        ["value", request.minAge.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "age"],
+          ["operator", Operator.GTE],
+          ["value", request.minAge.toString()],
+        ])
+      )
     }
 
     if (request.maxAge) {
-      filters.push(new Map([
-        ["field", "age"], 
-        ["operator", Operator.LTE], 
-        ["value", request.maxAge.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "age"],
+          ["operator", Operator.LTE],
+          ["value", request.maxAge.toString()],
+        ])
+      )
     }
 
     // 4. Date range filters
     if (request.createdAfter) {
-      filters.push(new Map([
-        ["field", "createdAt"], 
-        ["operator", Operator.GTE], 
-        ["value", request.createdAfter.toISOString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "createdAt"],
+          ["operator", Operator.GTE],
+          ["value", request.createdAfter.toISOString()],
+        ])
+      )
     }
 
     // 5. Text search filters last (lowest selectivity)
     if (request.searchTerm) {
       const searchConditions: OrCondition[] = [
-        { field: "name", operator: Operator.CONTAINS, value: request.searchTerm },
-        { field: "email", operator: Operator.CONTAINS, value: request.searchTerm }
-      ];
+        {
+          field: "name",
+          operator: Operator.CONTAINS,
+          value: request.searchTerm,
+        },
+        {
+          field: "email",
+          operator: Operator.CONTAINS,
+          value: request.searchTerm,
+        },
+      ]
 
-      filters.push(new Map([
-        ["field", "search"],
-        ["operator", Operator.OR],
-        ["value", searchConditions]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "search"],
+          ["operator", Operator.OR],
+          ["value", searchConditions],
+        ])
+      )
     }
 
     return new Criteria(
@@ -267,38 +293,50 @@ class OptimizedCriteriaBuilder {
       Order.desc("createdAt"),
       request.limit || 20,
       request.page || 1
-    );
+    )
   }
 }
 
 // ❌ Poor filter ordering
 class UnoptimizedCriteriaBuilder {
   static userSearch(request: UserSearchRequest): Criteria {
-    const filters: Array<Map<string, string | string[] | OrCondition[]>> = [];
+    const filters: Array<Map<string, string | string[] | OrCondition[]>> = []
 
     // ❌ Text search first (expensive full scan)
     if (request.searchTerm) {
       const searchConditions: OrCondition[] = [
-        { field: "name", operator: Operator.CONTAINS, value: request.searchTerm },
-        { field: "email", operator: Operator.CONTAINS, value: request.searchTerm }
-      ];
-      filters.push(new Map([
-        ["field", "search"],
-        ["operator", Operator.OR],
-        ["value", searchConditions]
-      ]));
+        {
+          field: "name",
+          operator: Operator.CONTAINS,
+          value: request.searchTerm,
+        },
+        {
+          field: "email",
+          operator: Operator.CONTAINS,
+          value: request.searchTerm,
+        },
+      ]
+      filters.push(
+        new Map([
+          ["field", "search"],
+          ["operator", Operator.OR],
+          ["value", searchConditions],
+        ])
+      )
     }
 
     // ❌ Specific filters after expensive operations
     if (request.userId) {
-      filters.push(new Map([
-        ["field", "userId"], 
-        ["operator", Operator.EQUAL], 
-        ["value", request.userId]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "userId"],
+          ["operator", Operator.EQUAL],
+          ["value", request.userId],
+        ])
+      )
     }
 
-    return new Criteria(Filters.fromValues(filters), Order.none());
+    return new Criteria(Filters.fromValues(filters), Order.none())
   }
 }
 ```
@@ -310,20 +348,20 @@ class UnoptimizedCriteriaBuilder {
 const searchConditions: OrCondition[] = [
   { field: "name", operator: Operator.CONTAINS, value: "term" },
   { field: "email", operator: Operator.CONTAINS, value: "term" },
-  { field: "phone", operator: Operator.CONTAINS, value: "term" }
-];
+  { field: "phone", operator: Operator.CONTAINS, value: "term" },
+]
 
 // ❌ Too many OR conditions (10+ conditions)
 const tooManyConditions: OrCondition[] = [
   // ... 15 different field searches
   // This can cause significant performance degradation
-];
+]
 
 // ✅ Better approach for many fields: Use text index
 // Instead of OR across many fields, create a composite search field
 db.users.createIndex({
-  searchText: "text"  // Combine name, email, phone, etc. into searchText field
-});
+  searchText: "text", // Combine name, email, phone, etc. into searchText field
+})
 ```
 
 ### Pagination Optimization
@@ -335,33 +373,46 @@ class PaginationOptimizer {
     // Always include a consistent sort field (preferably indexed)
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", "active"],
+        ]),
       ]),
       Order.desc("createdAt"), // Indexed field for consistent pagination
-      Math.min(limit, 100),    // Cap maximum page size
-      Math.max(page, 1)        // Ensure page >= 1
-    );
+      Math.min(limit, 100), // Cap maximum page size
+      Math.max(page, 1) // Ensure page >= 1
+    )
   }
 
   // For large datasets, consider cursor-based pagination
-  static buildCursorCriteria(lastCreatedAt?: string, limit: number = 20): Criteria {
+  static buildCursorCriteria(
+    lastCreatedAt?: string,
+    limit: number = 20
+  ): Criteria {
     const filters: Array<Map<string, string>> = [
-      new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
-    ];
+      new Map([
+        ["field", "status"],
+        ["operator", Operator.EQUAL],
+        ["value", "active"],
+      ]),
+    ]
 
     if (lastCreatedAt) {
-      filters.push(new Map([
-        ["field", "createdAt"], 
-        ["operator", Operator.LT], 
-        ["value", lastCreatedAt]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "createdAt"],
+          ["operator", Operator.LT],
+          ["value", lastCreatedAt],
+        ])
+      )
     }
 
     return new Criteria(
       Filters.fromValues(filters),
       Order.desc("createdAt"),
       limit
-    );
+    )
   }
 }
 
@@ -370,8 +421,8 @@ const deepPageCriteria = new Criteria(
   Filters.none(),
   Order.desc("createdAt"),
   20,
-  1000  // Page 1000 = skip 19,980 documents (very expensive)
-);
+  1000 // Page 1000 = skip 19,980 documents (very expensive)
+)
 ```
 
 ## Criteria Design Patterns
@@ -380,36 +431,52 @@ const deepPageCriteria = new Criteria(
 
 ```typescript
 class CachedCriteriaBuilder {
-  private static criteriaCache = new Map<string, Criteria>();
+  private static criteriaCache = new Map<string, Criteria>()
 
   static getCachedCriteria(key: string, builder: () => Criteria): Criteria {
     if (!this.criteriaCache.has(key)) {
-      this.criteriaCache.set(key, builder());
+      this.criteriaCache.set(key, builder())
     }
-    return this.criteriaCache.get(key)!;
+    return this.criteriaCache.get(key)!
   }
 
   static activeUsers(): Criteria {
-    return this.getCachedCriteria("activeUsers", () => 
-      new Criteria(
-        Filters.fromValues([
-          new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
-        ]),
-        Order.desc("createdAt")
-      )
-    );
+    return this.getCachedCriteria(
+      "activeUsers",
+      () =>
+        new Criteria(
+          Filters.fromValues([
+            new Map([
+              ["field", "status"],
+              ["operator", Operator.EQUAL],
+              ["value", "active"],
+            ]),
+          ]),
+          Order.desc("createdAt")
+        )
+    )
   }
 
   static premiumUsers(): Criteria {
-    return this.getCachedCriteria("premiumUsers", () =>
-      new Criteria(
-        Filters.fromValues([
-          new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-          new Map([["field", "plan"], ["operator", Operator.EQUAL], ["value", "premium"]])
-        ]),
-        Order.desc("upgradeDate")
-      )
-    );
+    return this.getCachedCriteria(
+      "premiumUsers",
+      () =>
+        new Criteria(
+          Filters.fromValues([
+            new Map([
+              ["field", "status"],
+              ["operator", Operator.EQUAL],
+              ["value", "active"],
+            ]),
+            new Map([
+              ["field", "plan"],
+              ["operator", Operator.EQUAL],
+              ["value", "premium"],
+            ]),
+          ]),
+          Order.desc("upgradeDate")
+        )
+    )
   }
 }
 ```
@@ -419,21 +486,42 @@ class CachedCriteriaBuilder {
 ```typescript
 class ConditionalFilterBuilder {
   static buildProductCriteria(filters: ProductFilters): Criteria {
-    const criteriaFilters: Array<Map<string, string | string[] | OrCondition[]>> = [];
+    const criteriaFilters: Array<
+      Map<string, string | string[] | OrCondition[]>
+    > = []
 
     // Always include base filters
     criteriaFilters.push(
-      new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
-    );
+      new Map([
+        ["field", "status"],
+        ["operator", Operator.EQUAL],
+        ["value", "active"],
+      ])
+    )
 
     // Add conditional filters efficiently
-    this.addConditionalFilter(criteriaFilters, "category", filters.category, Operator.EQUAL);
-    this.addConditionalFilter(criteriaFilters, "brand", filters.brand, Operator.EQUAL);
-    this.addRangeFilters(criteriaFilters, "price", filters.minPrice, filters.maxPrice);
-    
+    this.addConditionalFilter(
+      criteriaFilters,
+      "category",
+      filters.category,
+      Operator.EQUAL
+    )
+    this.addConditionalFilter(
+      criteriaFilters,
+      "brand",
+      filters.brand,
+      Operator.EQUAL
+    )
+    this.addRangeFilters(
+      criteriaFilters,
+      "price",
+      filters.minPrice,
+      filters.maxPrice
+    )
+
     // Add text search last
     if (filters.searchTerm) {
-      this.addTextSearch(criteriaFilters, filters.searchTerm);
+      this.addTextSearch(criteriaFilters, filters.searchTerm)
     }
 
     return new Criteria(
@@ -441,7 +529,7 @@ class ConditionalFilterBuilder {
       Order.desc("popularity"),
       filters.limit || 20,
       filters.page || 1
-    );
+    )
   }
 
   private static addConditionalFilter(
@@ -451,11 +539,13 @@ class ConditionalFilterBuilder {
     operator: Operator
   ): void {
     if (value) {
-      filters.push(new Map([
-        ["field", field],
-        ["operator", operator],
-        ["value", value]
-      ]));
+      filters.push(
+        new Map([
+          ["field", field],
+          ["operator", operator],
+          ["value", value],
+        ])
+      )
     }
   }
 
@@ -466,19 +556,23 @@ class ConditionalFilterBuilder {
     max?: number
   ): void {
     if (min !== undefined) {
-      filters.push(new Map([
-        ["field", field],
-        ["operator", Operator.GTE],
-        ["value", min.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", field],
+          ["operator", Operator.GTE],
+          ["value", min.toString()],
+        ])
+      )
     }
 
     if (max !== undefined) {
-      filters.push(new Map([
-        ["field", field],
-        ["operator", Operator.LTE],
-        ["value", max.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", field],
+          ["operator", Operator.LTE],
+          ["value", max.toString()],
+        ])
+      )
     }
   }
 
@@ -488,14 +582,16 @@ class ConditionalFilterBuilder {
   ): void {
     const searchConditions: OrCondition[] = [
       { field: "name", operator: Operator.CONTAINS, value: searchTerm },
-      { field: "description", operator: Operator.CONTAINS, value: searchTerm }
-    ];
+      { field: "description", operator: Operator.CONTAINS, value: searchTerm },
+    ]
 
-    filters.push(new Map([
-      ["field", "search"],
-      ["operator", Operator.OR],
-      ["value", searchConditions]
-    ]));
+    filters.push(
+      new Map([
+        ["field", "search"],
+        ["operator", Operator.OR],
+        ["value", searchConditions],
+      ])
+    )
   }
 }
 ```
@@ -509,35 +605,35 @@ class OptimizedRepository<T extends AggregateRoot> extends MongoRepository<T> {
     indexHint?: string,
     fieldsToExclude?: string[]
   ): Promise<T[]> {
-    const converter = new MongoCriteriaConverter();
-    const mongoQuery = converter.convert(criteria);
-    
-    const collection = await this.getCollection();
-    
+    const converter = new MongoCriteriaConverter()
+    const mongoQuery = converter.convert(criteria)
+
+    const collection = await this.getCollection()
+
     let query = collection
       .find(mongoQuery.filter)
       .sort(mongoQuery.sort)
-      .skip(mongoQuery.skip);
+      .skip(mongoQuery.skip)
 
     // Add index hint for performance
     if (indexHint) {
-      query = query.hint(indexHint);
+      query = query.hint(indexHint)
     }
 
     if (mongoQuery.limit > 0) {
-      query = query.limit(mongoQuery.limit);
+      query = query.limit(mongoQuery.limit)
     }
 
     if (fieldsToExclude && fieldsToExclude.length > 0) {
       const projection = fieldsToExclude.reduce((acc, field) => {
-        acc[field] = 0;
-        return acc;
-      }, {} as any);
-      query = query.project(projection);
+        acc[field] = 0
+        return acc
+      }, {} as any)
+      query = query.project(projection)
     }
 
-    const documents = await query.toArray();
-    return documents.map(doc => this.mapDocumentToEntity(doc));
+    const documents = await query.toArray()
+    return documents.map((doc) => this.mapDocumentToEntity(doc))
   }
 }
 
@@ -546,18 +642,26 @@ class UserRepository extends OptimizedRepository<User> {
   async findActiveUsersByAge(minAge: number): Promise<User[]> {
     const criteria = new Criteria(
       Filters.fromValues([
-        new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-        new Map([["field", "age"], ["operator", Operator.GTE], ["value", minAge.toString()]])
+        new Map([
+          ["field", "status"],
+          ["operator", Operator.EQUAL],
+          ["value", "active"],
+        ]),
+        new Map([
+          ["field", "age"],
+          ["operator", Operator.GTE],
+          ["value", minAge.toString()],
+        ]),
       ]),
       Order.desc("createdAt")
-    );
+    )
 
     // Use specific index for this query pattern
     return this.searchByCriteriaWithHints(
-      criteria, 
+      criteria,
       "status_1_age_1_createdAt_-1", // Index name
       ["internalNotes", "temporaryData"] // Exclude large fields
-    );
+    )
   }
 }
 ```
@@ -567,55 +671,64 @@ class UserRepository extends OptimizedRepository<User> {
 ### Query Performance Monitoring
 
 ```typescript
-class PerformanceMonitoringRepository<T extends AggregateRoot> extends MongoRepository<T> {
-  private performanceLogger = console; // Replace with your logging system
+class PerformanceMonitoringRepository<
+  T extends AggregateRoot,
+> extends MongoRepository<T> {
+  private performanceLogger = console // Replace with your logging system
 
   protected async searchByCriteria(
     criteria: Criteria,
     fieldsToExclude?: string[]
   ): Promise<T[]> {
-    const startTime = Date.now();
-    const queryFingerprint = this.generateQueryFingerprint(criteria);
+    const startTime = Date.now()
+    const queryFingerprint = this.generateQueryFingerprint(criteria)
 
     try {
-      const results = await super.searchByCriteria(criteria, fieldsToExclude);
-      const duration = Date.now() - startTime;
-      
-      this.logQueryPerformance(queryFingerprint, duration, results.length, false);
-      
+      const results = await super.searchByCriteria(criteria, fieldsToExclude)
+      const duration = Date.now() - startTime
+
+      this.logQueryPerformance(
+        queryFingerprint,
+        duration,
+        results.length,
+        false
+      )
+
       // Alert on slow queries
-      if (duration > 1000) { // More than 1 second
+      if (duration > 1000) {
+        // More than 1 second
         this.performanceLogger.warn("Slow query detected", {
           collection: this.collectionName(),
           duration,
           fingerprint: queryFingerprint,
-          resultCount: results.length
-        });
+          resultCount: results.length,
+        })
       }
 
-      return results;
+      return results
     } catch (error) {
-      const duration = Date.now() - startTime;
-      this.logQueryPerformance(queryFingerprint, duration, 0, true);
-      throw error;
+      const duration = Date.now() - startTime
+      this.logQueryPerformance(queryFingerprint, duration, 0, true)
+      throw error
     }
   }
 
   private generateQueryFingerprint(criteria: Criteria): string {
-    const filterTypes = criteria.filters.filters.map(f => 
-      `${f.field.value}:${f.operator.value}`
-    ).sort().join(",");
-    
-    const hasOrder = criteria.order.hasOrder();
-    const hasLimit = criteria.limit > 0;
-    
-    return `${filterTypes}|order:${hasOrder}|limit:${hasLimit}`;
+    const filterTypes = criteria.filters.filters
+      .map((f) => `${f.field.value}:${f.operator.value}`)
+      .sort()
+      .join(",")
+
+    const hasOrder = criteria.order.hasOrder()
+    const hasLimit = criteria.limit > 0
+
+    return `${filterTypes}|order:${hasOrder}|limit:${hasLimit}`
   }
 
   private logQueryPerformance(
-    fingerprint: string, 
-    duration: number, 
-    resultCount: number, 
+    fingerprint: string,
+    duration: number,
+    resultCount: number,
     failed: boolean
   ): void {
     this.performanceLogger.log("Query Performance", {
@@ -624,8 +737,8 @@ class PerformanceMonitoringRepository<T extends AggregateRoot> extends MongoRepo
       duration,
       resultCount,
       failed,
-      timestamp: new Date().toISOString()
-    });
+      timestamp: new Date().toISOString(),
+    })
   }
 }
 ```
@@ -633,56 +746,64 @@ class PerformanceMonitoringRepository<T extends AggregateRoot> extends MongoRepo
 ### Query Explain Integration
 
 ```typescript
-class ExplainableRepository<T extends AggregateRoot> extends MongoRepository<T> {
+class ExplainableRepository<
+  T extends AggregateRoot,
+> extends MongoRepository<T> {
   async explainQuery(criteria: Criteria): Promise<any> {
-    const converter = new MongoCriteriaConverter();
-    const mongoQuery = converter.convert(criteria);
-    
-    const collection = await this.getCollection();
-    
+    const converter = new MongoCriteriaConverter()
+    const mongoQuery = converter.convert(criteria)
+
+    const collection = await this.getCollection()
+
     const explainResult = await collection
       .find(mongoQuery.filter)
       .sort(mongoQuery.sort)
       .skip(mongoQuery.skip)
       .limit(mongoQuery.limit || 0)
-      .explain("executionStats");
+      .explain("executionStats")
 
     return {
       query: mongoQuery,
       explanation: explainResult,
-      recommendations: this.analyzeExplanation(explainResult)
-    };
+      recommendations: this.analyzeExplanation(explainResult),
+    }
   }
 
   private analyzeExplanation(explanation: any): string[] {
-    const recommendations: string[] = [];
-    const stats = explanation.executionStats;
+    const recommendations: string[] = []
+    const stats = explanation.executionStats
 
     // Check if query used an index
     if (stats.executionStages.stage === "COLLSCAN") {
-      recommendations.push("Query performed a collection scan. Consider adding an index.");
+      recommendations.push(
+        "Query performed a collection scan. Consider adding an index."
+      )
     }
 
     // Check examined vs returned documents ratio
-    const examineRatio = stats.totalDocsExamined / stats.totalDocsReturned;
+    const examineRatio = stats.totalDocsExamined / stats.totalDocsReturned
     if (examineRatio > 10) {
-      recommendations.push(`Query examined ${stats.totalDocsExamined} documents but returned only ${stats.totalDocsReturned}. Consider more selective filters or better indexes.`);
+      recommendations.push(
+        `Query examined ${stats.totalDocsExamined} documents but returned only ${stats.totalDocsReturned}. Consider more selective filters or better indexes.`
+      )
     }
 
     // Check execution time
     if (stats.executionTimeMillis > 100) {
-      recommendations.push(`Query took ${stats.executionTimeMillis}ms. Consider optimization.`);
+      recommendations.push(
+        `Query took ${stats.executionTimeMillis}ms. Consider optimization.`
+      )
     }
 
-    return recommendations;
+    return recommendations
   }
 }
 
 // Usage
-const userRepo = new ExplainableRepository<User>();
-const criteria = new Criteria(/* your criteria */);
-const analysis = await userRepo.explainQuery(criteria);
-console.log("Query Analysis:", analysis.recommendations);
+const userRepo = new ExplainableRepository<User>()
+const criteria = new Criteria(/* your criteria */)
+const analysis = await userRepo.explainQuery(criteria)
+console.log("Query Analysis:", analysis.recommendations)
 ```
 
 ## Common Performance Issues
@@ -693,10 +814,14 @@ console.log("Query Analysis:", analysis.recommendations);
 // ❌ Problem: No index on filtered field
 const inefficientCriteria = new Criteria(
   Filters.fromValues([
-    new Map([["field", "customField"], ["operator", Operator.EQUAL], ["value", "value"]])
+    new Map([
+      ["field", "customField"],
+      ["operator", Operator.EQUAL],
+      ["value", "value"],
+    ]),
   ]),
   Order.none()
-);
+)
 
 // ✅ Solution: Create index
 // db.collection.createIndex({ customField: 1 });
@@ -711,22 +836,26 @@ const inefficientTextSearch: OrCondition[] = [
   { field: "field2", operator: Operator.CONTAINS, value: "term" },
   { field: "field3", operator: Operator.CONTAINS, value: "term" },
   { field: "field4", operator: Operator.CONTAINS, value: "term" },
-  { field: "field5", operator: Operator.CONTAINS, value: "term" }
-];
+  { field: "field5", operator: Operator.CONTAINS, value: "term" },
+]
 
 // ✅ Solution: Use text index
-// db.collection.createIndex({ 
-//   field1: "text", 
-//   field2: "text", 
-//   field3: "text" 
+// db.collection.createIndex({
+//   field1: "text",
+//   field2: "text",
+//   field3: "text"
 // });
 
 const efficientTextSearch = new Criteria(
   Filters.fromValues([
-    new Map([["field", "$text"], ["operator", Operator.EQUAL], ["value", "term"]])
+    new Map([
+      ["field", "$text"],
+      ["operator", Operator.EQUAL],
+      ["value", "term"],
+    ]),
   ]),
   Order.none()
-);
+)
 ```
 
 ### 3. **Deep Pagination**
@@ -737,19 +866,23 @@ const deepPagination = new Criteria(
   Filters.none(),
   Order.desc("createdAt"),
   20,
-  500  // Skip 9,980 documents
-);
+  500 // Skip 9,980 documents
+)
 
 // ✅ Solution: Cursor-based pagination
 class CursorPagination {
   static getNextPage(lastId: string, limit: number = 20): Criteria {
     return new Criteria(
       Filters.fromValues([
-        new Map([["field", "_id"], ["operator", Operator.GT], ["value", lastId]])
+        new Map([
+          ["field", "_id"],
+          ["operator", Operator.GT],
+          ["value", lastId],
+        ]),
       ]),
       Order.asc("_id"),
       limit
-    );
+    )
   }
 }
 ```
@@ -760,11 +893,16 @@ class CursorPagination {
 // ❌ Problem: Sorting without corresponding index
 const unsortedCriteria = new Criteria(
   Filters.fromValues([
-    new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]])
+    new Map([
+      ["field", "status"],
+      ["operator", Operator.EQUAL],
+      ["value", "active"],
+    ]),
   ]),
   Order.desc("customField"), // No index on customField
-  20, 1
-);
+  20,
+  1
+)
 
 // ✅ Solution: Create compound index
 // db.collection.createIndex({ status: 1, customField: -1 });
@@ -776,33 +914,35 @@ const unsortedCriteria = new Criteria(
 
 ```typescript
 class QueryPatternAnalyzer {
-  private queryPatterns = new Map<string, number>();
+  private queryPatterns = new Map<string, number>()
 
   trackQuery(criteria: Criteria): void {
-    const pattern = this.extractPattern(criteria);
-    const count = this.queryPatterns.get(pattern) || 0;
-    this.queryPatterns.set(pattern, count + 1);
+    const pattern = this.extractPattern(criteria)
+    const count = this.queryPatterns.get(pattern) || 0
+    this.queryPatterns.set(pattern, count + 1)
   }
 
-  getTopPatterns(limit: number = 10): Array<{pattern: string, count: number}> {
+  getTopPatterns(
+    limit: number = 10
+  ): Array<{ pattern: string; count: number }> {
     return Array.from(this.queryPatterns.entries())
       .map(([pattern, count]) => ({ pattern, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, limit);
+      .slice(0, limit)
   }
 
   private extractPattern(criteria: Criteria): string {
     const fields = criteria.filters.filters
-      .map(f => f.field.value)
+      .map((f) => f.field.value)
       .sort()
-      .join(",");
-    
-    const operators = criteria.filters.filters
-      .map(f => f.operator.value)
-      .sort()
-      .join(",");
+      .join(",")
 
-    return `fields:${fields}|ops:${operators}|sorted:${criteria.order.hasOrder()}`;
+    const operators = criteria.filters.filters
+      .map((f) => f.operator.value)
+      .sort()
+      .join(",")
+
+    return `fields:${fields}|ops:${operators}|sorted:${criteria.order.hasOrder()}`
   }
 }
 ```
@@ -812,51 +952,57 @@ class QueryPatternAnalyzer {
 ```typescript
 class IndexSuggester {
   static suggestIndexes(criteria: Criteria): string[] {
-    const suggestions: string[] = [];
-    const fields: string[] = [];
+    const suggestions: string[] = []
+    const fields: string[] = []
 
     // Analyze filter fields
-    criteria.filters.filters.forEach(filter => {
+    criteria.filters.filters.forEach((filter) => {
       if (filter.operator.value === Operator.EQUAL) {
-        fields.unshift(filter.field.value); // Equality fields first
-      } else if ([Operator.GT, Operator.GTE, Operator.LT, Operator.LTE].includes(filter.operator.value)) {
-        fields.push(filter.field.value); // Range fields after equality
+        fields.unshift(filter.field.value) // Equality fields first
+      } else if (
+        [Operator.GT, Operator.GTE, Operator.LT, Operator.LTE].includes(
+          filter.operator.value
+        )
+      ) {
+        fields.push(filter.field.value) // Range fields after equality
       }
-    });
+    })
 
     // Add sort field last
     if (criteria.order.hasOrder()) {
-      fields.push(criteria.order.orderBy.value);
+      fields.push(criteria.order.orderBy.value)
     }
 
     if (fields.length > 0) {
-      const direction = criteria.order.isDesc() ? -1 : 1;
-      const lastField = fields[fields.length - 1];
-      
+      const direction = criteria.order.isDesc() ? -1 : 1
+      const lastField = fields[fields.length - 1]
+
       if (fields.length === 1) {
-        suggestions.push(`db.collection.createIndex({ ${lastField}: ${direction} });`);
+        suggestions.push(
+          `db.collection.createIndex({ ${lastField}: ${direction} });`
+        )
       } else {
         const indexSpec = fields
           .map((field, index) => {
-            const dir = index === fields.length - 1 ? direction : 1;
-            return `${field}: ${dir}`;
+            const dir = index === fields.length - 1 ? direction : 1
+            return `${field}: ${dir}`
           })
-          .join(", ");
-        suggestions.push(`db.collection.createIndex({ ${indexSpec} });`);
+          .join(", ")
+        suggestions.push(`db.collection.createIndex({ ${indexSpec} });`)
       }
     }
 
     // Suggest text indexes for OR conditions with CONTAINS
-    const hasTextSearch = criteria.filters.filters.some(filter => 
-      filter.operator.value === Operator.OR && 
-      filter.value.isOrConditions
-    );
+    const hasTextSearch = criteria.filters.filters.some(
+      (filter) =>
+        filter.operator.value === Operator.OR && filter.value.isOrConditions
+    )
 
     if (hasTextSearch) {
-      suggestions.push("Consider creating a text index for search fields");
+      suggestions.push("Consider creating a text index for search fields")
     }
 
-    return suggestions;
+    return suggestions
   }
 }
 ```
@@ -866,14 +1012,14 @@ class IndexSuggester {
 ```typescript
 // Optimize MongoDB connection settings
 const optimizedConnectionOptions = {
-  maxPoolSize: 10,          // Maximum number of connections
-  minPoolSize: 5,           // Minimum number of connections
-  maxIdleTimeMS: 30000,     // Close connections after 30 seconds of inactivity
+  maxPoolSize: 10, // Maximum number of connections
+  minPoolSize: 5, // Minimum number of connections
+  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
   serverSelectionTimeoutMS: 5000, // How long to try to connect
-  socketTimeoutMS: 45000,   // How long to wait for a response
-  bufferMaxEntries: 0,      // Disable mongoose buffering
-  bufferCommands: false,    // Disable mongoose buffering
-};
+  socketTimeoutMS: 45000, // How long to wait for a response
+  bufferMaxEntries: 0, // Disable mongoose buffering
+  bufferCommands: false, // Disable mongoose buffering
+}
 ```
 
 ## Real-world Optimizations
@@ -887,49 +1033,59 @@ class OptimizedProductSearchService {
   // Text index: { name: "text", description: "text" }
 
   buildOptimizedProductCriteria(request: ProductSearchRequest): Criteria {
-    const filters: Array<Map<string, string | string[] | OrCondition[]>> = [];
+    const filters: Array<Map<string, string | string[] | OrCondition[]>> = []
 
     // 1. Most selective: exact category match
     if (request.category) {
-      filters.push(new Map([
-        ["field", "category"],
-        ["operator", Operator.EQUAL],
-        ["value", request.category]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "category"],
+          ["operator", Operator.EQUAL],
+          ["value", request.category],
+        ])
+      )
     }
 
     // 2. High selectivity: status filter
-    filters.push(new Map([
-      ["field", "status"],
-      ["operator", Operator.EQUAL],
-      ["value", "active"]
-    ]));
+    filters.push(
+      new Map([
+        ["field", "status"],
+        ["operator", Operator.EQUAL],
+        ["value", "active"],
+      ])
+    )
 
     // 3. Range filters: price
     if (request.minPrice) {
-      filters.push(new Map([
-        ["field", "price"],
-        ["operator", Operator.GTE],
-        ["value", request.minPrice.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "price"],
+          ["operator", Operator.GTE],
+          ["value", request.minPrice.toString()],
+        ])
+      )
     }
 
     if (request.maxPrice) {
-      filters.push(new Map([
-        ["field", "price"],
-        ["operator", Operator.LTE],
-        ["value", request.maxPrice.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "price"],
+          ["operator", Operator.LTE],
+          ["value", request.maxPrice.toString()],
+        ])
+      )
     }
 
     // 4. Text search (use text index instead of OR)
     if (request.searchTerm) {
       // Use MongoDB text search instead of regex OR
-      filters.push(new Map([
-        ["field", "$text"],
-        ["operator", Operator.EQUAL],
-        ["value", `"${request.searchTerm}"`]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "$text"],
+          ["operator", Operator.EQUAL],
+          ["value", `"${request.searchTerm}"`],
+        ])
+      )
     }
 
     return new Criteria(
@@ -937,7 +1093,7 @@ class OptimizedProductSearchService {
       Order.desc("popularity"), // Indexed sort field
       Math.min(request.limit || 20, 50), // Cap limit
       request.page || 1
-    );
+    )
   }
 }
 ```
@@ -950,54 +1106,74 @@ class OptimizedAnalyticsService {
   // Required index: { status: 1, createdAt: -1, userType: 1 }
 
   buildTimeSeriesCriteria(
-    startDate: Date, 
-    endDate: Date, 
+    startDate: Date,
+    endDate: Date,
     userType?: string
   ): Criteria {
     const filters: Array<Map<string, string>> = [
       // Status filter first (highest selectivity)
-      new Map([["field", "status"], ["operator", Operator.EQUAL], ["value", "active"]]),
-      
+      new Map([
+        ["field", "status"],
+        ["operator", Operator.EQUAL],
+        ["value", "active"],
+      ]),
+
       // Date range (good selectivity for time-series)
-      new Map([["field", "createdAt"], ["operator", Operator.GTE], ["value", startDate.toISOString()]]),
-      new Map([["field", "createdAt"], ["operator", Operator.LTE], ["value", endDate.toISOString()]])
-    ];
+      new Map([
+        ["field", "createdAt"],
+        ["operator", Operator.GTE],
+        ["value", startDate.toISOString()],
+      ]),
+      new Map([
+        ["field", "createdAt"],
+        ["operator", Operator.LTE],
+        ["value", endDate.toISOString()],
+      ]),
+    ]
 
     if (userType) {
-      filters.push(new Map([
-        ["field", "userType"],
-        ["operator", Operator.EQUAL],
-        ["value", userType]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "userType"],
+          ["operator", Operator.EQUAL],
+          ["value", userType],
+        ])
+      )
     }
 
     return new Criteria(
       Filters.fromValues(filters),
       Order.desc("createdAt"),
       1000 // Larger limit for analytics
-    );
+    )
   }
 
   // For real-time dashboards: cache frequently accessed criteria
-  private static readonly CACHE_TTL = 60000; // 1 minute
-  private criteriaCache = new Map<string, { criteria: Criteria, timestamp: number }>();
+  private static readonly CACHE_TTL = 60000 // 1 minute
+  private criteriaCache = new Map<
+    string,
+    { criteria: Criteria; timestamp: number }
+  >()
 
   getCachedTimeSeriesCriteria(
-    startDate: Date, 
-    endDate: Date, 
+    startDate: Date,
+    endDate: Date,
     userType?: string
   ): Criteria {
-    const key = `${startDate.getTime()}-${endDate.getTime()}-${userType || 'all'}`;
-    const cached = this.criteriaCache.get(key);
-    
-    if (cached && Date.now() - cached.timestamp < OptimizedAnalyticsService.CACHE_TTL) {
-      return cached.criteria;
+    const key = `${startDate.getTime()}-${endDate.getTime()}-${userType || "all"}`
+    const cached = this.criteriaCache.get(key)
+
+    if (
+      cached &&
+      Date.now() - cached.timestamp < OptimizedAnalyticsService.CACHE_TTL
+    ) {
+      return cached.criteria
     }
 
-    const criteria = this.buildTimeSeriesCriteria(startDate, endDate, userType);
-    this.criteriaCache.set(key, { criteria, timestamp: Date.now() });
-    
-    return criteria;
+    const criteria = this.buildTimeSeriesCriteria(startDate, endDate, userType)
+    this.criteriaCache.set(key, { criteria, timestamp: Date.now() })
+
+    return criteria
   }
 }
 ```
@@ -1007,7 +1183,7 @@ class OptimizedAnalyticsService {
 ```typescript
 class OptimizedOrderService {
   // Optimized for: order status updates and reporting
-  // Required indexes: 
+  // Required indexes:
   // - { userId: 1, status: 1, createdAt: -1 }
   // - { status: 1, totalAmount: -1, createdAt: -1 }
 
@@ -1017,65 +1193,75 @@ class OptimizedOrderService {
     minAmount?: number,
     startDate?: Date
   ): Criteria {
-    const filters: Array<Map<string, string | string[] | OrCondition[]>> = [];
+    const filters: Array<Map<string, string | string[] | OrCondition[]>> = []
 
     // User-specific queries (most selective)
     if (userId) {
-      filters.push(new Map([
-        ["field", "userId"],
-        ["operator", Operator.EQUAL],
-        ["value", userId]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "userId"],
+          ["operator", Operator.EQUAL],
+          ["value", userId],
+        ])
+      )
     }
 
     // Status filter with OR optimization
     if (status && status.length > 0) {
       if (status.length === 1) {
         // Single status: use equality
-        filters.push(new Map([
-          ["field", "status"],
-          ["operator", Operator.EQUAL],
-          ["value", status[0]]
-        ]));
+        filters.push(
+          new Map([
+            ["field", "status"],
+            ["operator", Operator.EQUAL],
+            ["value", status[0]],
+          ])
+        )
       } else {
         // Multiple statuses: use OR
-        const statusConditions: OrCondition[] = status.map(s => ({
+        const statusConditions: OrCondition[] = status.map((s) => ({
           field: "status",
           operator: Operator.EQUAL,
-          value: s
-        }));
-        
-        filters.push(new Map([
-          ["field", "status_options"],
-          ["operator", Operator.OR],
-          ["value", statusConditions]
-        ]));
+          value: s,
+        }))
+
+        filters.push(
+          new Map([
+            ["field", "status_options"],
+            ["operator", Operator.OR],
+            ["value", statusConditions],
+          ])
+        )
       }
     }
 
     // Amount filter
     if (minAmount) {
-      filters.push(new Map([
-        ["field", "totalAmount"],
-        ["operator", Operator.GTE],
-        ["value", minAmount.toString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "totalAmount"],
+          ["operator", Operator.GTE],
+          ["value", minAmount.toString()],
+        ])
+      )
     }
 
     // Date range
     if (startDate) {
-      filters.push(new Map([
-        ["field", "createdAt"],
-        ["operator", Operator.GTE],
-        ["value", startDate.toISOString()]
-      ]));
+      filters.push(
+        new Map([
+          ["field", "createdAt"],
+          ["operator", Operator.GTE],
+          ["value", startDate.toISOString()],
+        ])
+      )
     }
 
     return new Criteria(
       Filters.fromValues(filters),
       Order.desc("createdAt"),
       100 // Reasonable limit for order reports
-    );
+    )
   }
 }
 ```
