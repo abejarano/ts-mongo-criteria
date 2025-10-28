@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/abejarano/ts-mongo-criteria/compare/v1.1.0...v1.2.0) (2025-10-28)
+
+
+### Features
+
+* add BETWEEN operator for inclusive range filtering and update related documentation ([76ccc1b](https://github.com/abejarano/ts-mongo-criteria/commit/76ccc1bf32774a36478c1d55b972082d0fe11d79))
+
 # [1.1.0](https://github.com/abejarano/ts-mongo-criteria/compare/v1.0.7...v1.1.0) (2025-10-02)
 
 ### Features
