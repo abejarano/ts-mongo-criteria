@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/abejarano/ts-mongo-criteria/compare/v1.2.0...v1.2.1) (2025-12-04)
+
+
+### Bug Fixes
+
+* update dependencies to latest versions and adjust release workflow ([2d5297f](https://github.com/abejarano/ts-mongo-criteria/commit/2d5297ffc9a738e667cde834a669dd31764b5086))
+
 # [1.2.0](https://github.com/abejarano/ts-mongo-criteria/compare/v1.1.0...v1.2.0) (2025-10-28)
 
 
