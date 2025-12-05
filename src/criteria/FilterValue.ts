@@ -108,4 +108,16 @@ export class FilterValue extends StringValueObject {
 
     throw new Error("Value is not a BETWEEN structure")
   }
+
+  get isPrimitiveArray(): boolean {
+    return Array.isArray(this._originalValue) && !this.isOrConditions
+  }
+
+  get asPrimitiveArray(): FilterPrimitive[] {
+    if (this.isPrimitiveArray) {
+      return this._originalValue as FilterPrimitive[]
+    }
+
+    throw new Error("Value is not an array of primitive values")
+  }
 }

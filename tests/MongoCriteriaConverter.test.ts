@@ -281,5 +281,41 @@ describe("MongoCriteriaConverter", () => {
         $or: [{ name: { $regex: "john" } }, { email: { $regex: "john" } }],
       })
     })
+
+    it("should handle IN operator", () => {
+      const filters = [
+        new Map<string, FilterInputValue>([
+          ["field", "status"],
+          ["operator", Operator.IN],
+          ["value", ["P", "F"]],
+        ]),
+      ]
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none())
+
+      const mongoQuery = converter.convert(criteria)
+
+      expect(mongoQuery.filter).toEqual({
+        status: { $in: ["P", "F"] },
+      })
+    })
+
+    it("should handle NOT_IN operator", () => {
+      const filters = [
+        new Map<string, FilterInputValue>([
+          ["field", "status"],
+          ["operator", Operator.NOT_IN],
+          ["value", ["P", "F"]],
+        ]),
+      ]
+
+      const criteria = new Criteria(Filters.fromValues(filters), Order.none())
+
+      const mongoQuery = converter.convert(criteria)
+
+      expect(mongoQuery.filter).toEqual({
+        status: { $nin: ["P", "F"] },
+      })
+    })
   })
 })

@@ -10,13 +10,16 @@ type MongoFilterOperator =
   | "$lte"
   | "$gte"
   | "$or"
+  | "$in"
+  | "$nin"
 
 type MongoFilterBetween = {
   [p: string]: { $gte: MongoFilterValue; $lte: MongoFilterValue }
 }
 type MongoFilterValue = boolean | string | number | Date
+type MongoFilterArrayValue = MongoFilterValue[]
 type MongoFilterOperation = {
-  [operator in MongoFilterOperator]?: MongoFilterValue
+  [operator in MongoFilterOperator]?: MongoFilterValue | MongoFilterArrayValue
 }
 type MongoFilter =
   | { [field: string]: MongoFilterOperation }
@@ -57,6 +60,8 @@ export class MongoCriteriaConverter {
       [Operator.LTE, this.lowerThanOrEqualFilter],
       [Operator.BETWEEN, this.betweenFilter],
       [Operator.OR, this.orFilter],
+      [Operator.IN, this.inFilter],
+      [Operator.NOT_IN, this.notInFilter],
     ])
   }
 
@@ -126,6 +131,22 @@ export class MongoCriteriaConverter {
     return {
       [filter.field.value]: { $not: { $regex: filter.value.value } },
     }
+  }
+
+  private inFilter(filter: Filter): MongoFilter {
+    if (!filter.value.isPrimitiveArray) {
+      throw new Error("IN operator requires an array of primitive values")
+    }
+
+    return { [filter.field.value]: { $in: filter.value.asPrimitiveArray } }
+  }
+
+  private notInFilter(filter: Filter): MongoFilter {
+    if (!filter.value.isPrimitiveArray) {
+      throw new Error("NOT_IN operator requires an array of primitive values")
+    }
+
+    return { [filter.field.value]: { $nin: filter.value.asPrimitiveArray } }
   }
 
   private orFilter(filter: Filter): MongoFilter {

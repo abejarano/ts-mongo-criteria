@@ -11,6 +11,8 @@ export enum Operator {
   LTE = "<=",
   BETWEEN = "BETWEEN",
   OR = "OR",
+  IN = "IN",
+  NOT_IN = "NOT_IN",
 }
 
 //export class FilterOperator extends EnumValueObject<Operator> {

@@ -30,6 +30,8 @@ needs. Each operator is type-safe and generates optimized MongoDB queries.
 | `CONTAINS`     | Text contains         | `$regex`           | `name contains "john"`                          |
 | `NOT_CONTAINS` | Text doesn't contain  | `$not: { $regex }` | `name not contains "spam"`                      |
 | `OR`           | Logical OR            | `$or`              | `name contains "john" OR email contains "john"` |
+| `IN`           | Value in list         | `$in`              | `status IN ["active", "pending"]`               |
+| `NOT_IN`       | Value not in list     | `$nin`             | `status NOT IN ["archived"]`                    |
 
 ## Basic Operators
 
@@ -224,6 +226,68 @@ const criteria = new Criteria(
 - Works best with indexes on the filtered field
 - Use `BETWEEN` instead of stacking `GTE` + `LTE` on the same field for clearer intent
 - Accepts `start`/`end` or `startDate`/`endDate` keys when building the filter map
+
+### IN
+
+Matches documents where the field value appears in the provided list of values.
+
+```typescript
+const criteria = new Criteria(
+  Filters.fromValues([
+    new Map([
+      ["field", "status"],
+      ["operator", Operator.IN],
+      ["value", ["active", "pending"]],
+    ]),
+  ]),
+  Order.none()
+)
+
+// Generates: { status: { $in: ["active", "pending"] } }
+```
+
+**Use Cases:**
+
+- Status filters (`status IN ["active", "pending"]`)
+- Category inclusion (`category IN ["books", "games"]`)
+- Bulk lookups by identifiers (`id IN ["a", "b", "c"]`)
+
+**Performance Tips:**
+
+- Efficient with single-field indexes; MongoDB can satisfy `$in` using the same index range scan
+- Prefer `$in` over large `$or` chains for the same field for cleaner queries
+- Avoid overly large lists; consider batching when the value set is huge
+
+### NOT_IN
+
+Matches documents where the field value is not present in the provided list of values.
+
+```typescript
+const criteria = new Criteria(
+  Filters.fromValues([
+    new Map([
+      ["field", "status"],
+      ["operator", Operator.NOT_IN],
+      ["value", ["archived", "deleted"]],
+    ]),
+  ]),
+  Order.none()
+)
+
+// Generates: { status: { $nin: ["archived", "deleted"] } }
+```
+
+**Use Cases:**
+
+- Exclude terminal states (`status NOT IN ["archived", "deleted"]`)
+- Filter out blocked users (`userId NOT IN blockedList`)
+- Skip unwanted categories (`category NOT IN ["spam", "test"]`)
+
+**Performance Tips:**
+
+- Consider positive inclusion when possible as `$nin` may be less selective
+- Combine with other selective filters to keep query efficient
+- Ensure supporting indexes exist to avoid full collection scans
 
 ## Text Operators
 
