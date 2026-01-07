@@ -31,8 +31,8 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   /** Upserts an aggregate by delegating to persist with its id. */
-  public async upsert(entity: T): Promise<ObjectId | null> {
-    return this.persist(entity.getId(), entity)
+  public async upsert(entity: T): Promise<void> {
+    await this.persist(entity.getId(), entity)
   }
 
   /** Lists entities by criteria and returns a paginated response. */
@@ -53,20 +53,15 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   protected async updateOne(
     filter: object,
     update: Document[] | UpdateFilter<any>
-  ): Promise<ObjectId | null> {
+  ): Promise<void> {
     const collection = await this.collection()
 
-    const result = await collection.updateOne(filter, update, {
+    await collection.updateOne(filter, update, {
       upsert: true,
     })
-
-    return result.upsertedId
   }
 
-  private async persist(
-    id: string,
-    aggregateRoot: T
-  ): Promise<ObjectId | null> {
+  private async persist(id: string, aggregateRoot: T): Promise<void> {
     let primitives: any
 
     if (aggregateRoot.toPrimitives() instanceof Promise) {
@@ -75,7 +70,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       primitives = aggregateRoot.toPrimitives()
     }
 
-    return await this.updateOne(
+    await this.updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {

@@ -1,4 +1,3 @@
-import { ObjectId } from "mongodb"
 import { Criteria, Paginate } from "../criteria"
 import { AggregateRoot } from "../AggregateRoot"
 
@@ -8,5 +7,5 @@ export interface IRepository<T extends AggregateRoot> {
     criteria: Criteria,
     fieldsToExclude?: string[]
   ): Promise<Paginate<D>>
-  upsert(entity: T): Promise<ObjectId | null>
+  upsert(entity: T): Promise<void>
 }
