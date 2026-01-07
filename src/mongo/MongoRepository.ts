@@ -1,7 +1,7 @@
 import { MongoCriteriaConverter, MongoQuery } from "./MongoCriteriaConverter"
 import { MongoClientFactory } from "./MongoClientFactory"
 import { Criteria, Paginate } from "../criteria"
-import { AggregateRoot } from "../AggregateRoot"
+import { AggregateRoot, AggregateRootClass } from "../AggregateRoot"
 import { Collection, ObjectId, UpdateFilter } from "mongodb"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
@@ -9,48 +9,39 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   private query!: MongoQuery
   private criteria!: Criteria
 
-  protected constructor() {
+  protected constructor(
+    private readonly aggregateRootClass: AggregateRootClass<T>
+  ) {
     this.criteriaConverter = new MongoCriteriaConverter()
   }
 
   abstract collectionName(): string
 
-  // transformationToUpsertInSubDocuments(
-  //   subDocumentField: string,
-  //   primitiveData: any,
-  // ): {} {
-  //   const response = {};
-  //
-  //   for (const key in primitiveData) {
-  //     response[`${subDocumentField}.$.${key}`] = primitiveData[key];
-  //   }
-  //
-  //   return response;
-  // }
-
-  public async paginate<T>(documents: T[]): Promise<Paginate<T>> {
+  /** Finds a single entity and hydrates it via the aggregate's fromPrimitives. */
+  public async one(filter: object): Promise<T | null> {
     const collection = await this.collection()
+    const result = await collection.findOne(filter as any)
 
-    const count = await collection.countDocuments(this.query.filter as any)
-
-    const limit = this.criteria?.limit || 10
-    const currentPage = this.criteria?.currentPage || 1
-
-    const hasNextPage: boolean = currentPage * limit < count
-
-    if (documents.length === 0) {
-      return {
-        nextPag: null,
-        count: 0,
-        results: [],
-      }
+    if (!result) {
+      return null
     }
 
-    return {
-      nextPag: hasNextPage ? Number(this.criteria.currentPage) + 1 : null,
-      count: count,
-      results: documents,
-    }
+    const { _id, ...rest } = result as any
+    return this.aggregateRootClass.fromPrimitives(rest)
+  }
+
+  /** Upserts an aggregate by delegating to persist with its id. */
+  public async upsert(entity: T): Promise<ObjectId | null> {
+    return this.persist(entity.getId(), entity)
+  }
+
+  /** Lists entities by criteria and returns a paginated response. */
+  public async list<D>(
+    criteria: Criteria,
+    fieldsToExclude: string[] = []
+  ): Promise<Paginate<D>> {
+    const documents = await this.searchByCriteria<D>(criteria, fieldsToExclude)
+    return this.paginate<D>(documents)
   }
 
   protected async collection<T extends Document>(): Promise<Collection<T>> {
@@ -59,7 +50,20 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       .collection<T>(this.collectionName())
   }
 
-  protected async persist(
+  protected async updateOne(
+    filter: object,
+    update: Document[] | UpdateFilter<any>
+  ): Promise<ObjectId | null> {
+    const collection = await this.collection()
+
+    const result = await collection.updateOne(filter, update, {
+      upsert: true,
+    })
+
+    return result.upsertedId
+  }
+
+  private async persist(
     id: string,
     aggregateRoot: T
   ): Promise<ObjectId | null> {
@@ -82,20 +86,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     )
   }
 
-  protected async updateOne(
-    filter: object,
-    update: Document[] | UpdateFilter<any>
-  ): Promise<ObjectId | null> {
-    const collection = await this.collection()
-
-    const result = await collection.updateOne(filter, update, {
-      upsert: true,
-    })
-
-    return result.upsertedId
-  }
-
-  protected async searchByCriteria<D>(
+  private async searchByCriteria<D>(
     criteria: Criteria,
     fieldsToExclude: string[] = []
   ): Promise<D[]> {
@@ -128,5 +119,30 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       .toArray()
 
     return results.map(({ _id, ...rest }) => rest as D)
+  }
+
+  private async paginate<T>(documents: T[]): Promise<Paginate<T>> {
+    const collection = await this.collection()
+
+    const count = await collection.countDocuments(this.query.filter as any)
+
+    const limit = this.criteria?.limit || 10
+    const currentPage = this.criteria?.currentPage || 1
+
+    const hasNextPage: boolean = currentPage * limit < count
+
+    if (documents.length === 0) {
+      return {
+        nextPag: null,
+        count: 0,
+        results: [],
+      }
+    }
+
+    return {
+      nextPag: hasNextPage ? Number(this.criteria.currentPage) + 1 : null,
+      count: count,
+      results: documents,
+    }
   }
 }

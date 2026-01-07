@@ -172,11 +172,14 @@ class UserRepository extends MongoRepository<User> {
 
 // Use it
 const userRepo = new UserRepository()
-const users = await userRepo.searchByCriteria(adultActiveUsers)
+const users = await userRepo.list(adultActiveUsers)
 
 console.log("✅ Query executed successfully!")
-console.log(`Found ${users.length} users`)
+console.log(`Found ${users.count} users`)
 ```
+
+Note: repositories that extend `MongoRepository` can use `list`, `one`, and `upsert`
+directly without redefining them.
 
 ## Basic Concepts
 

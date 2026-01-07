@@ -40,10 +40,18 @@ jobs:
         run: yarn build
 
       - name: Run type checking
-        run: yarn tsc --noEmit
+        run: yarn typecheck
 
       - name: Run tests
         run: yarn test
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: "latest"
+
+      - name: Run Bun smoke tests
+        run: yarn test:bun
 
   release:
     needs: test

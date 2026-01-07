@@ -156,6 +156,11 @@ const userRepo = new UserRepository()
 const users = await userRepo.searchByCriteria(criteria)
 ```
 
+MongoRepository provides ready-to-use public methods for repositories that extend it:
+- `list(criteria, fieldsToExclude?)` for paginated queries
+- `one(filter)` to fetch a single entity
+- `upsert(entity)` to persist an aggregate
+
 **Your First Query in 30 Seconds:**
 
 ```typescript
@@ -178,7 +183,7 @@ const activeAdultUsers = new Criteria(
   1 // First page
 )
 
-const results = await repository.searchByCriteria(activeAdultUsers)
+const results = await repository.list(activeAdultUsers)
 ```
 
 ## 📖 Documentation
@@ -218,6 +223,10 @@ const order = Order.desc("createdAt") // or Order.asc("name")
 - `BETWEEN` - Inclusive range with lower and upper bounds
 - `CONTAINS`, `NOT_CONTAINS` - Text search
 - `OR` - Logical OR combinations
+
+## ✅ Runtime Compatibility
+
+This library ships dual builds (CJS + ESM) and works in both Node.js and Bun.
 
 ### 🆕 OR Operator Example
 
