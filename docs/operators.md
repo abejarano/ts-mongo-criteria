@@ -818,11 +818,15 @@ const tooManyConditions: OrCondition[] = [
 
 ```typescript
 class PerformantUserRepository extends MongoRepository<User> {
-  async findWithCriteria(criteria: Criteria): Promise<User[]> {
+  constructor() {
+    super(User)
+  }
+
+  async findWithCriteria(criteria: Criteria): Promise<Paginate<User>> {
     const startTime = Date.now()
 
     try {
-      const results = await this.searchByCriteria(criteria)
+      const results = await this.list(criteria)
       const duration = Date.now() - startTime
 
       // Log slow queries

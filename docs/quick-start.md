@@ -165,6 +165,10 @@ class User extends AggregateRoot {
 
 // Create repository
 class UserRepository extends MongoRepository<User> {
+  constructor() {
+    super(User)
+  }
+
   collectionName(): string {
     return "users"
   }
@@ -179,7 +183,16 @@ console.log(`Found ${users.count} users`)
 ```
 
 Note: repositories that extend `MongoRepository` can use `list`, `one`, and `upsert`
-directly without redefining them.
+directly without redefining them. Internal helpers are private.
+
+If your application defines repository interfaces, extend `IRepository<T>` to keep
+method signatures consistent with the library:
+
+```typescript
+import { IRepository } from "@abejarano/ts-mongodb-criteria"
+
+export interface IUserRepository extends IRepository<User> {}
+```
 
 ## Basic Concepts
 
@@ -400,12 +413,16 @@ class Product extends AggregateRoot {
 
 // Repository implementation
 class ProductRepository extends MongoRepository<Product> {
+  constructor() {
+    super(Product)
+  }
+
   collectionName(): string {
     return "products"
   }
 
   // Custom query methods
-  async findAvailableProducts(): Promise<Product[]> {
+  async findAvailableProducts(): Promise<Paginate<Product>> {
     const criteria = new Criteria(
       Filters.fromValues([
         new Map([
@@ -417,10 +434,13 @@ class ProductRepository extends MongoRepository<Product> {
       Order.desc("createdAt")
     )
 
-    return this.searchByCriteria(criteria)
+    return this.list(criteria)
   }
 
-  async findByCategory(category: string, page: number = 1): Promise<Product[]> {
+  async findByCategory(
+    category: string,
+    page: number = 1
+  ): Promise<Paginate<Product>> {
     const criteria = new Criteria(
       Filters.fromValues([
         new Map([
@@ -434,10 +454,10 @@ class ProductRepository extends MongoRepository<Product> {
       page
     )
 
-    return this.searchByCriteria(criteria)
+    return this.list(criteria)
   }
 
-  async searchProducts(searchTerm: string): Promise<Product[]> {
+  async searchProducts(searchTerm: string): Promise<Paginate<Product>> {
     const searchConditions: OrCondition[] = [
       { field: "name", operator: Operator.CONTAINS, value: searchTerm },
       { field: "description", operator: Operator.CONTAINS, value: searchTerm },
@@ -454,7 +474,7 @@ class ProductRepository extends MongoRepository<Product> {
       Order.desc("popularity")
     )
 
-    return this.searchByCriteria(criteria)
+    return this.list(criteria)
   }
 }
 ```
@@ -497,7 +517,7 @@ class SearchProductsUseCase {
 
   async execute(request: ProductSearchRequest): Promise<Product[]> {
     const criteria = this.buildCriteria(request)
-    return this.productRepository.searchByCriteria(criteria)
+    return (await this.productRepository.list(criteria)).results
   }
 
   private buildCriteria(request: ProductSearchRequest): Criteria {

@@ -303,7 +303,11 @@ describe("UserService", () => {
 3. **Repository Pattern**: When implementing data access layers
    ```typescript
    class ProductRepository extends MongoRepository<Product> {
-     async findBestSellers(category?: string): Promise<Product[]> {
+     constructor() {
+       super(Product)
+     }
+
+     async findBestSellers(category?: string): Promise<Paginate<Product>> {
        const filters = [
          new Map([
            ["field", "salesCount"],
@@ -328,7 +332,7 @@ describe("UserService", () => {
          20
        )
 
-       return this.searchByCriteria(criteria)
+       return this.list(criteria)
      }
    }
    ```
@@ -536,8 +540,12 @@ const query = QueryBuilder.select()
 ```typescript
 // Criteria Pattern - One method handles all cases
 class UserRepository extends MongoRepository<User> {
-  async findByCriteria(criteria: Criteria): Promise<User[]> {
-    return this.searchByCriteria(criteria)
+  constructor() {
+    super(User)
+  }
+
+  async findByCriteria(criteria: Criteria): Promise<Paginate<User>> {
+    return this.list(criteria)
   }
 }
 

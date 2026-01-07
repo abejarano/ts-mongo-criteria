@@ -599,47 +599,12 @@ class ConditionalFilterBuilder {
 ### 3. Query Hint Pattern
 
 ```typescript
-class OptimizedRepository<T extends AggregateRoot> extends MongoRepository<T> {
-  protected async searchByCriteriaWithHints(
-    criteria: Criteria,
-    indexHint?: string,
-    fieldsToExclude?: string[]
-  ): Promise<T[]> {
-    const converter = new MongoCriteriaConverter()
-    const mongoQuery = converter.convert(criteria)
-
-    const collection = await this.getCollection()
-
-    let query = collection
-      .find(mongoQuery.filter)
-      .sort(mongoQuery.sort)
-      .skip(mongoQuery.skip)
-
-    // Add index hint for performance
-    if (indexHint) {
-      query = query.hint(indexHint)
-    }
-
-    if (mongoQuery.limit > 0) {
-      query = query.limit(mongoQuery.limit)
-    }
-
-    if (fieldsToExclude && fieldsToExclude.length > 0) {
-      const projection = fieldsToExclude.reduce((acc, field) => {
-        acc[field] = 0
-        return acc
-      }, {} as any)
-      query = query.project(projection)
-    }
-
-    const documents = await query.toArray()
-    return documents.map((doc) => this.mapDocumentToEntity(doc))
+class UserRepository extends MongoRepository<User> {
+  constructor() {
+    super(User)
   }
-}
 
-// Usage with specific index hints
-class UserRepository extends OptimizedRepository<User> {
-  async findActiveUsersByAge(minAge: number): Promise<User[]> {
+  async findActiveUsersByAge(minAge: number): Promise<Paginate<User>> {
     const criteria = new Criteria(
       Filters.fromValues([
         new Map([
@@ -656,15 +621,13 @@ class UserRepository extends OptimizedRepository<User> {
       Order.desc("createdAt")
     )
 
-    // Use specific index for this query pattern
-    return this.searchByCriteriaWithHints(
-      criteria,
-      "status_1_age_1_createdAt_-1", // Index name
-      ["internalNotes", "temporaryData"] // Exclude large fields
-    )
+    return this.list(criteria, ["internalNotes", "temporaryData"])
   }
 }
 ```
+
+If you need index hints, prefer using the native MongoDB driver in a separate
+data-access method. `MongoRepository` keeps its internal query helpers private.
 
 ## Monitoring and Profiling
 
@@ -676,21 +639,28 @@ class PerformanceMonitoringRepository<
 > extends MongoRepository<T> {
   private performanceLogger = console // Replace with your logging system
 
-  protected async searchByCriteria(
+  constructor(aggregateRootClass: AggregateRootClass<T>) {
+    super(aggregateRootClass)
+  }
+
+  async listWithMonitoring(
     criteria: Criteria,
     fieldsToExclude?: string[]
-  ): Promise<T[]> {
+  ): Promise<Paginate<T>> {
     const startTime = Date.now()
     const queryFingerprint = this.generateQueryFingerprint(criteria)
 
     try {
-      const results = await super.searchByCriteria(criteria, fieldsToExclude)
+      const results = await this.list<T>(
+        criteria,
+        fieldsToExclude ? fieldsToExclude : []
+      )
       const duration = Date.now() - startTime
 
       this.logQueryPerformance(
         queryFingerprint,
         duration,
-        results.length,
+        results.count,
         false
       )
 
@@ -701,7 +671,7 @@ class PerformanceMonitoringRepository<
           collection: this.collectionName(),
           duration,
           fingerprint: queryFingerprint,
-          resultCount: results.length,
+          resultCount: results.count,
         })
       }
 
@@ -753,7 +723,7 @@ class ExplainableRepository<
     const converter = new MongoCriteriaConverter()
     const mongoQuery = converter.convert(criteria)
 
-    const collection = await this.getCollection()
+    const collection = await this.collection()
 
     const explainResult = await collection
       .find(mongoQuery.filter)

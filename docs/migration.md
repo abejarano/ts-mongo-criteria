@@ -64,7 +64,7 @@ class UserService {
       20
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 
   // Gradually replace calls to findActiveUsersOld with findActiveUsers
@@ -227,7 +227,7 @@ class LegacyUserService {
     )
 
     // Use new repository method
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 }
 ```
@@ -328,7 +328,7 @@ class ValidationMigrationService {
       request.page || 1
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 
   private validateResults(
@@ -410,7 +410,7 @@ class UserService {
       Order.none()
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 
   async findUsersByAge(minAge: number, maxAge: number): Promise<User[]> {
@@ -430,7 +430,7 @@ class UserService {
       Order.none()
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 
   async searchUsers(term: string): Promise<User[]> {
@@ -450,7 +450,7 @@ class UserService {
       Order.none()
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 }
 ```
@@ -505,29 +505,18 @@ class ProductService {
       20
     )
 
-    return this.productRepository.searchByCriteria(criteria)
+    return (await this.productRepository.list(criteria)).results
   }
 }
 
 // Extended repository for compound sorting
 class ProductRepository extends MongoRepository<Product> {
-  protected async searchByCriteria(criteria: Criteria): Promise<Product[]> {
-    const converter = new MongoCriteriaConverter()
-    const mongoQuery = converter.convert(criteria)
+  constructor() {
+    super(Product)
+  }
 
-    const collection = await this.getCollection()
-
-    // Custom sort for popularity + createdAt
-    const sort = { popularity: -1, createdAt: -1 }
-
-    const documents = await collection
-      .find(mongoQuery.filter)
-      .sort(sort)
-      .limit(mongoQuery.limit)
-      .skip(mongoQuery.skip)
-      .toArray()
-
-    return documents.map((doc) => this.mapDocumentToEntity(doc))
+  async findPopularProducts(criteria: Criteria): Promise<Product[]> {
+    return (await this.list<Product>(criteria)).results
   }
 }
 ```
@@ -582,7 +571,7 @@ class UserService {
       20
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 
   async findUsersPaginated(page: number, limit: number): Promise<User[]> {
@@ -599,7 +588,7 @@ class UserService {
       page
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 
   async searchUsersByName(name: string): Promise<User[]> {
@@ -619,7 +608,7 @@ class UserService {
       Order.asc("name")
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 }
 ```
@@ -659,7 +648,7 @@ class OrderService {
       Order.desc("createdAt")
     )
 
-    const orders = await this.orderRepository.searchByCriteria(orderCriteria)
+    const orders = (await this.orderRepository.list(orderCriteria)).results
 
     // Get related data
     const [user, products] = await Promise.all([
@@ -687,7 +676,7 @@ class OrderService {
       Order.none()
     )
 
-    const users = await this.userRepository.searchByCriteria(criteria)
+    const users = (await this.userRepository.list(criteria)).results
     return users[0]
   }
 
@@ -715,7 +704,7 @@ class OrderService {
       Order.none()
     )
 
-    return this.productRepository.searchByCriteria(criteria)
+    return (await this.productRepository.list(criteria)).results
   }
 }
 ```
@@ -819,7 +808,7 @@ class UserQueryService {
       20
     )
 
-    return this.userRepository.searchByCriteria(criteria)
+    return (await this.userRepository.list(criteria)).results
   }
 }
 ```
@@ -957,7 +946,7 @@ class ProductSearchService {
 
   async searchProducts(request: ProductSearchRequest): Promise<Product[]> {
     const criteria = this.buildSearchCriteria(request)
-    return this.productRepository.searchByCriteria(criteria)
+    return (await this.productRepository.list(criteria)).results
   }
 
   private buildSearchCriteria(request: ProductSearchRequest): Criteria {
@@ -1084,6 +1073,10 @@ class ProductSearchService {
    ```typescript
    // Create your base repository extending MongoRepository
    class BaseRepository<T extends AggregateRoot> extends MongoRepository<T> {
+     constructor(aggregateRootClass: AggregateRootClass<T>) {
+       super(aggregateRootClass)
+     }
+
      // Add any custom logic here
    }
    ```

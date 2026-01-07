@@ -147,19 +147,39 @@ const criteria = new Criteria(
 
 // 3. Use with your MongoDB repository
 class UserRepository extends MongoRepository<User> {
+  constructor() {
+    super(User)
+  }
+
   collectionName(): string {
     return "users"
   }
 }
 
 const userRepo = new UserRepository()
-const users = await userRepo.searchByCriteria(criteria)
+const { results } = await userRepo.list(criteria)
 ```
 
 MongoRepository provides ready-to-use public methods for repositories that extend it:
 - `list(criteria, fieldsToExclude?)` for paginated queries
 - `one(filter)` to fetch a single entity
 - `upsert(entity)` to persist an aggregate
+Internal helpers are private, so repositories should call these public methods
+directly.
+
+If you need a repository interface in your app, extend `IRepository<T>` so your
+custom interfaces stay aligned with the library return types:
+
+```typescript
+import { IRepository } from "@abejarano/ts-mongodb-criteria"
+
+export interface IUserRepository extends IRepository<User> {
+  // Add domain-specific methods here
+}
+```
+
+The goal of `IRepository` is to prevent signature drift (e.g. `upsert` returning
+`void` in your app while the base repository returns `ObjectId | null`).
 
 **Your First Query in 30 Seconds:**
 
