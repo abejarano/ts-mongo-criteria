@@ -2,7 +2,7 @@ import { MongoCriteriaConverter, MongoQuery } from "./MongoCriteriaConverter"
 import { MongoClientFactory } from "./MongoClientFactory"
 import { Criteria, Paginate } from "../criteria"
 import { AggregateRoot, AggregateRootClass } from "../AggregateRoot"
-import { Collection, ObjectId, UpdateFilter } from "mongodb"
+import { Collection, Document, ObjectId, UpdateFilter } from "mongodb"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
   private criteriaConverter: MongoCriteriaConverter
