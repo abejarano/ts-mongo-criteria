@@ -154,11 +154,20 @@ class UserRepository extends MongoRepository<User> {
   collectionName(): string {
     return "users"
   }
+
+  // Create indexes the first time the collection is accessed
+  protected async ensureIndexes(collection: Collection): Promise<void> {
+    await collection.createIndex({ email: 1 }, { unique: true })
+  }
 }
 
 const userRepo = new UserRepository()
 const { results } = await userRepo.list(criteria)
 ```
+
+Indexes are created lazily the first time the repository accesses the collection
+(via `list`, `one`, or `upsert`).
+Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 
 MongoRepository provides ready-to-use public methods for repositories that extend it:
 - `list(criteria, fieldsToExclude?)` for paginated queries

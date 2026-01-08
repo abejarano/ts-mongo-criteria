@@ -172,6 +172,11 @@ class UserRepository extends MongoRepository<User> {
   collectionName(): string {
     return "users"
   }
+
+  // Create indexes the first time the collection is accessed
+  protected async ensureIndexes(collection: Collection): Promise<void> {
+    await collection.createIndex({ email: 1 }, { unique: true })
+  }
 }
 
 // Use it
@@ -181,6 +186,10 @@ const users = await userRepo.list(adultActiveUsers)
 console.log("✅ Query executed successfully!")
 console.log(`Found ${users.count} users`)
 ```
+
+Indexes are created lazily the first time the repository accesses the collection
+(via `list`, `one`, or `upsert`).
+Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 
 Note: repositories that extend `MongoRepository` can use `list`, `one`, and `upsert`
 directly without redefining them. Internal helpers are private.
@@ -419,6 +428,11 @@ class ProductRepository extends MongoRepository<Product> {
 
   collectionName(): string {
     return "products"
+  }
+
+  protected async ensureIndexes(collection: Collection): Promise<void> {
+    await collection.createIndex({ category: 1 })
+    await collection.createIndex({ status: 1 })
   }
 
   // Custom query methods

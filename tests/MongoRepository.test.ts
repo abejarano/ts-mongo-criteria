@@ -44,6 +44,7 @@ jest.mock("../src/mongo/MongoClientFactory", () => {
     limit: jest.fn().mockReturnThis(),
     toArray: jest.fn(),
     countDocuments: jest.fn(),
+    createIndex: jest.fn(),
   }
 
   return {
@@ -68,6 +69,10 @@ class TestRepository extends MongoRepository<TestEntity> {
 
   collectionName(): string {
     return "test_collection"
+  }
+
+  protected async ensureIndexes(_collection: any): Promise<void> {
+    // no-op for tests
   }
 }
 

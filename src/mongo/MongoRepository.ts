@@ -8,6 +8,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   private criteriaConverter: MongoCriteriaConverter
   private query!: MongoQuery
   private criteria!: Criteria
+  private static indexRegistry = new Set<string>()
 
   protected constructor(
     private readonly aggregateRootClass: AggregateRootClass<T>
@@ -16,6 +17,28 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   abstract collectionName(): string
+  protected abstract ensureIndexes(collection: Collection): Promise<void>
+
+  protected async ensureIndexesOnce(): Promise<void> {
+    const key = this.collectionName()
+    if (MongoRepository.indexRegistry.has(key)) return
+
+    const collection = await this.collectionRaw()
+    await this.ensureIndexes(collection)
+
+    MongoRepository.indexRegistry.add(key)
+  }
+
+  protected async collection<U extends Document>(): Promise<Collection<U>> {
+    await this.ensureIndexesOnce()
+    return this.collectionRaw<U>()
+  }
+
+  private async collectionRaw<U extends Document>(): Promise<Collection<U>> {
+    return (await MongoClientFactory.createClient())
+      .db()
+      .collection<U>(this.collectionName())
+  }
 
   /** Finds a single entity and hydrates it via the aggregate's fromPrimitives. */
   public async one(filter: object): Promise<T | null> {
@@ -42,12 +65,6 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   ): Promise<Paginate<D>> {
     const documents = await this.searchByCriteria<D>(criteria, fieldsToExclude)
     return this.paginate<D>(documents)
-  }
-
-  protected async collection<T extends Document>(): Promise<Collection<T>> {
-    return (await MongoClientFactory.createClient())
-      .db()
-      .collection<T>(this.collectionName())
   }
 
   protected async updateOne(
