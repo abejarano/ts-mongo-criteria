@@ -30,7 +30,7 @@ class TestEntity extends AggregateRoot {
     }
   }
 
-  static fromPrimitives(data: any): TestEntity {
+  static override fromPrimitives(data: any): TestEntity {
     return new TestEntity(data.id, data.name, data.email, data.status)
   }
 }
