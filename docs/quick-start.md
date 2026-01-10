@@ -148,6 +148,10 @@ class User extends AggregateRoot {
     }
   }
 
+  static override fromPrimitives(data: any): User {
+    return new User(data.id, data.name, data.email, data.status, data.age)
+  }
+
   // Getters
   getName(): string {
     return this.name
@@ -198,7 +202,7 @@ If your application defines repository interfaces, extend `IRepository<T>` to ke
 method signatures consistent with the library:
 
 ```typescript
-import { IRepository } from "@abejarano/ts-mongodb-criteria"
+import type { IRepository } from "@abejarano/ts-mongodb-criteria"
 
 export interface IUserRepository extends IRepository<User> {}
 ```
@@ -408,6 +412,16 @@ class Product extends AggregateRoot {
       category: this.category,
       status: this.status,
     }
+  }
+
+  static override fromPrimitives(data: any): Product {
+    return new Product(
+      data.id,
+      data.name,
+      data.price,
+      data.category,
+      data.status
+    )
   }
 
   // Business methods

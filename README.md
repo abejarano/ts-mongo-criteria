@@ -180,7 +180,7 @@ If you need a repository interface in your app, extend `IRepository<T>` so your
 custom interfaces stay aligned with the library return types:
 
 ```typescript
-import { IRepository } from "@abejarano/ts-mongodb-criteria"
+import type { IRepository } from "@abejarano/ts-mongodb-criteria"
 
 export interface IUserRepository extends IRepository<User> {
   // Add domain-specific methods here
