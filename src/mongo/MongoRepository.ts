@@ -42,15 +42,17 @@ export abstract class MongoRepository<T extends AggregateRoot> {
 
   /** Finds a single entity and hydrates it via the aggregate's fromPrimitives. */
   public async one(filter: object): Promise<T | null> {
-    const collection = await this.collection()
+    const collection = await this.collection<T>()
     const result = await collection.findOne(filter as any)
 
     if (!result) {
       return null
     }
 
-    const { _id, ...rest } = result as any
-    return this.aggregateRootClass.fromPrimitives(rest)
+    return this.aggregateRootClass.fromPrimitives({
+      ...result,
+      id: result._id.toString(),
+    })
   }
 
   /** Upserts an aggregate by delegating to persist with its id. */
