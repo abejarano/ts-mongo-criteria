@@ -16,6 +16,7 @@
 - [✨ Key Features](#-key-features)
 - [📦 Installation](#-installation)
 - [🚀 Quick Start](#-quick-start)
+- [🗄️ Migrations](#-migrations)
 - [📖 Documentation](#-documentation)
 - [🧪 Testing](#-testing)
 - [🤝 Contributing](#-contributing)
@@ -94,6 +95,15 @@ yarn add @abejarano/ts-mongodb-criteria
 
 # Using pnpm
 pnpm add @abejarano/ts-mongodb-criteria
+```
+
+### Package Manager
+
+This repo is Bun-first and ships with a `bun.lock`. Use Bun for installs and
+scripts:
+
+```bash
+bun install
 ```
 
 ### Peer Dependencies
@@ -215,6 +225,19 @@ const activeAdultUsers = new Criteria(
 const results = await repository.list(activeAdultUsers)
 ```
 
+## 🗄️ Migrations
+
+This repo includes a `migrate-mongo` CLI setup to manage database schema/data
+changes with `up` and `down` commands. If you consume this library in another
+app, replicate the setup in your app repository (migrations are app-specific).
+
+```bash
+bun run migrate:up
+bun run migrate:down
+```
+
+See the full CLI guide here: `docs/mongo-migrations.md`.
+
 ## 📖 Documentation
 
 ### 📖 Complete Documentation
@@ -224,6 +247,7 @@ const results = await repository.list(activeAdultUsers)
 - **[🔧 Operators Reference](./docs/operators.md)** - Complete guide to all available operators and their usage
 - **[⚡ Performance Guide](./docs/performance.md)** - Optimization strategies and best practices
 - **[🔄 Migration Guide](./docs/migration.md)** - Migrate from other query systems to Criteria pattern
+- **[🗄️ MongoDB Migrations (CLI)](./docs/mongo-migrations.md)** - Run database migrations with migrate-mongo
 
 ### 🎯 Key Concepts
 
