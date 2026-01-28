@@ -389,6 +389,31 @@ yarn build
 6. **Push** to your branch (`git push origin feature/amazing-feature`)
 7. **Open** a Pull Request
 
+## CLI & Migrations
+
+To use the migration features, you must first initialize the configuration in your project:
+
+```bash
+bun run ts-mongo init
+```
+
+This will create a `migrate-mongo-config.js` file in your project root. You must configure your MongoDB connection settings in this file (or via environment variables as defined in the config).
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `init` | Initialize configuration file |
+| `migrate:create <name>` | Create a new migration file |
+| `migrate:up` | Run pending migrations |
+| `migrate:down` | Revert the last applied migration |
+| `migrate:status` | Check the status of migrations |
+
+Example:
+```bash
+bun run ts-mongo migrate:create add-users-collection
+```
+
 ## 📄 License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.

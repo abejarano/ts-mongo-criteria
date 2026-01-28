@@ -34,4 +34,5 @@ module.exports = {
   changelogCollectionName: "migrations",
   migrationFileExtension: ".js",
   useFileHash: false,
+  moduleSystem: "commonjs",
 }
