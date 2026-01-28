@@ -227,14 +227,34 @@ const results = await repository.list(activeAdultUsers)
 
 ## 🗄️ Migrations
 
-This repo includes a `migrate-mongo` CLI setup to manage database schema/data
-changes with `up` and `down` commands. If you consume this library in another
-app, replicate the setup in your app repository (migrations are app-specific).
+This repo includes a CLI wrapper for `migrate-mongo`.
+To use it in your application:
+
+1. Initialize the configuration:
 
 ```bash
-bun run migrate:up
-bun run migrate:down
+bun ts-mongo init
 ```
+
+2. Edit `migrate-mongo-config.js` with your database details.
+
+3. Run migrations using the `ts-mongo` command:
+
+```bash
+# Create a new migration
+bun ts-mongo migrate:create add-users-index
+
+# Run migrations up
+bun ts-mongo migrate:up
+
+# Undo last migration
+bun ts-mongo migrate:down
+
+# Check status
+bun ts-mongo migrate:status
+```
+
+Note: You can also use `npx`, `bunx` or `yarn run`.
 
 See the full CLI guide here: `docs/mongo-migrations.md`.
 
