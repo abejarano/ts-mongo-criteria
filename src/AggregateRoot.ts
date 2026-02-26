@@ -1,5 +1,5 @@
 export abstract class AggregateRoot {
-  abstract getId(): string
+  abstract getId(): string | undefined
   abstract toPrimitives(): any
 
   static fromPrimitives(_data: any): AggregateRoot {
