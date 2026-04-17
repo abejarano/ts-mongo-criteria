@@ -301,6 +301,7 @@ describe("UserService", () => {
    ```
 
 3. **Repository Pattern**: When implementing data access layers
+
    ```typescript
    class ProductRepository extends MongoRepository<Product> {
      constructor() {

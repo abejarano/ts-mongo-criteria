@@ -657,12 +657,7 @@ class PerformanceMonitoringRepository<
       )
       const duration = Date.now() - startTime
 
-      this.logQueryPerformance(
-        queryFingerprint,
-        duration,
-        results.count,
-        false
-      )
+      this.logQueryPerformance(queryFingerprint, duration, results.count, false)
 
       // Alert on slow queries
       if (duration > 1000) {

@@ -2,13 +2,19 @@ import { MongoCriteriaConverter, MongoQuery } from "./MongoCriteriaConverter"
 import { MongoClientFactory } from "./MongoClientFactory"
 import { Criteria, Paginate } from "../criteria"
 import { AggregateRoot, AggregateRootClass } from "../AggregateRoot"
-import { Collection, Document, ObjectId, UpdateFilter } from "mongodb"
+import {
+  Collection,
+  DeleteOptions,
+  Document,
+  ObjectId,
+  UpdateFilter,
+} from "mongodb"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
+  private static indexRegistry = new Set<string>()
   private criteriaConverter: MongoCriteriaConverter
   private query!: MongoQuery
   private criteria!: Criteria
-  private static indexRegistry = new Set<string>()
 
   protected constructor(
     private readonly aggregateRootClass: AggregateRootClass<T>
@@ -17,28 +23,6 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   abstract collectionName(): string
-  protected abstract ensureIndexes(collection: Collection): Promise<void>
-
-  protected async ensureIndexesOnce(): Promise<void> {
-    const key = this.collectionName()
-    if (MongoRepository.indexRegistry.has(key)) return
-
-    const collection = await this.collectionRaw()
-    await this.ensureIndexes(collection)
-
-    MongoRepository.indexRegistry.add(key)
-  }
-
-  protected async collection<U extends Document>(): Promise<Collection<U>> {
-    await this.ensureIndexesOnce()
-    return this.collectionRaw<U>()
-  }
-
-  private async collectionRaw<U extends Document>(): Promise<Collection<U>> {
-    return (await MongoClientFactory.createClient())
-      .db()
-      .collection<U>(this.collectionName())
-  }
 
   /** Finds a single entity and hydrates it via the aggregate's fromPrimitives. */
   public async one(filter: object): Promise<T | null> {
@@ -57,7 +41,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
 
   /** Upserts an aggregate by delegating to persist with its id. */
   public async upsert(entity: T): Promise<void> {
-    await this.persist(entity.getId(), entity)
+    await this.persist(entity.getId()!, entity)
   }
 
   /** Lists entities by criteria and returns a paginated response. */
@@ -69,6 +53,35 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     return this.paginate<D>(documents)
   }
 
+  /**
+   * Deletes documents from the database based on a filter and optional options.
+   *
+   * @param {object} filter - The query to match documents that should be deleted.
+   * @param {DeleteOptions} [options] - Optional parameters that modify the behavior of the delete operation.
+   * @return {Promise<void>} A promise that resolves when the deletion is complete, or rejects if an error occurs.
+   */
+  public async delete(filter: object, options?: DeleteOptions): Promise<void> {
+    const collection = await this.collection<T>()
+    await collection.deleteMany(filter, options)
+  }
+
+  protected abstract ensureIndexes(collection: Collection): Promise<void>
+
+  protected async ensureIndexesOnce(): Promise<void> {
+    const key = this.collectionName()
+    if (MongoRepository.indexRegistry.has(key)) return
+
+    const collection = await this.collectionRaw()
+    await this.ensureIndexes(collection)
+
+    MongoRepository.indexRegistry.add(key)
+  }
+
+  protected async collection<U extends Document>(): Promise<Collection<U>> {
+    await this.ensureIndexesOnce()
+    return this.collectionRaw<U>()
+  }
+
   protected async updateOne(
     filter: object,
     update: Document[] | UpdateFilter<any>
@@ -78,6 +91,12 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     await collection.updateOne(filter, update, {
       upsert: true,
     })
+  }
+
+  private async collectionRaw<U extends Document>(): Promise<Collection<U>> {
+    return (await MongoClientFactory.createClient())
+      .db()
+      .collection<U>(this.collectionName())
   }
 
   private async persist(id: string, aggregateRoot: T): Promise<void> {

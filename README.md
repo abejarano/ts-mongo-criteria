@@ -180,11 +180,12 @@ Indexes are created lazily the first time the repository accesses the collection
 Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 
 MongoRepository provides ready-to-use public methods for repositories that extend it:
+
 - `list(criteria, fieldsToExclude?)` for paginated queries
 - `one(filter)` to fetch a single entity
 - `upsert(entity)` to persist an aggregate
-Internal helpers are private, so repositories should call these public methods
-directly.
+  Internal helpers are private, so repositories should call these public methods
+  directly.
 
 If you need a repository interface in your app, extend `IRepository<T>` so your
 custom interfaces stay aligned with the library return types:
@@ -401,15 +402,16 @@ This will create a `migrate-mongo-config.js` file in your project root. You must
 
 ### Commands
 
-| Command | Description |
-|---|---|
-| `init` | Initialize configuration file |
-| `migrate:create <name>` | Create a new migration file |
-| `migrate:up` | Run pending migrations |
-| `migrate:down` | Revert the last applied migration |
-| `migrate:status` | Check the status of migrations |
+| Command                 | Description                       |
+| ----------------------- | --------------------------------- |
+| `init`                  | Initialize configuration file     |
+| `migrate:create <name>` | Create a new migration file       |
+| `migrate:up`            | Run pending migrations            |
+| `migrate:down`          | Revert the last applied migration |
+| `migrate:status`        | Check the status of migrations    |
 
 Example:
+
 ```bash
 bun run ts-mongo migrate:create add-users-collection
 ```

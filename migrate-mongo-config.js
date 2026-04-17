@@ -1,10 +1,5 @@
-const {
-  MONGO_URI,
-  MONGO_USER,
-  MONGO_PASS,
-  MONGO_SERVER,
-  MONGO_DB,
-} = process.env
+const { MONGO_URI, MONGO_USER, MONGO_PASS, MONGO_SERVER, MONGO_DB } =
+  process.env
 
 const buildMongoUri = () => {
   if (MONGO_URI) return MONGO_URI

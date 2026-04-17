@@ -30,7 +30,6 @@ export class MongoClientFactory {
    * Crea y conecta una nueva instancia de MongoClient.
    */
   private static async createAndConnectClient(): Promise<MongoClient> {
-
     const uri = process.env.MONGO_URI
 
     if (!uri) {

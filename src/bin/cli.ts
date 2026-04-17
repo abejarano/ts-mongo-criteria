@@ -8,7 +8,9 @@ const args = process.argv.slice(2)
 const command = args[0]
 
 if (!command) {
-  console.error("Please provide a command: migrate:create, migrate:up, migrate:down, migrate:status")
+  console.error(
+    "Please provide a command: migrate:create, migrate:up, migrate:down, migrate:status"
+  )
   process.exit(1)
 }
 
@@ -28,48 +30,50 @@ const validCommands = ["init", "create", "up", "down", "status"]
 const normalizedCommand = command.replace("migrate:", "")
 
 if (!validCommands.includes(normalizedCommand)) {
-    console.error(`Unknown command: ${command}.`)
-    console.error(`Available commands: ${validCommands.map(c => `migrate:${c}`).join(", ")}`)
-    process.exit(1)
+  console.error(`Unknown command: ${command}.`)
+  console.error(
+    `Available commands: ${validCommands.map((c) => `migrate:${c}`).join(", ")}`
+  )
+  process.exit(1)
 }
 
 let extraOptions = ""
 
 // Logic to handle ESM projects automatically
 if (normalizedCommand === "init") {
-    // Check if -m is already passed
-    if (!args.includes("-m") && !args.includes("--module")) {
-        const packageJsonPath = path.join(process.cwd(), "package.json")
-        if (fs.existsSync(packageJsonPath)) {
-            try {
-                const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"))
-                if (pkg.type === "module") {
-                    extraOptions += " -m esm"
-                }
-            } catch (e) {
-                // ignore
-            }
+  // Check if -m is already passed
+  if (!args.includes("-m") && !args.includes("--module")) {
+    const packageJsonPath = path.join(process.cwd(), "package.json")
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"))
+        if (pkg.type === "module") {
+          extraOptions += " -m esm"
         }
+      } catch (e) {
+        // ignore
+      }
     }
+  }
 } else if (["create", "up", "down", "status"].includes(normalizedCommand)) {
-    // Check if -f is passed
-    if (!args.includes("-f") && !args.includes("--file")) {
-        const cjsConfig = "migrate-mongo-config.cjs"
-        if (fs.existsSync(path.join(process.cwd(), cjsConfig))) {
-             extraOptions += ` -f ${cjsConfig}`
-        }
+  // Check if -f is passed
+  if (!args.includes("-f") && !args.includes("--file")) {
+    const cjsConfig = "migrate-mongo-config.cjs"
+    if (fs.existsSync(path.join(process.cwd(), cjsConfig))) {
+      extraOptions += ` -f ${cjsConfig}`
     }
+  }
 }
 
 try {
   // Execute migrate-mongo from the dependency
   // Using `bunx` or `npx` might be safer to find the binary, or resolve it directly.
   // Since it is a dependency, it should be in node_modules/.bin/migrate-mongo
-  
+
   const binPath = "./node_modules/.bin/migrate-mongo"
   const otherArgs = args.slice(1).join(" ")
   const finalCommand = `${binPath} ${normalizedCommand} ${otherArgs}${extraOptions}`
-  
+
   console.log(`Running: ${finalCommand}`)
   execSync(finalCommand, { stdio: "inherit" })
 } catch (error) {
