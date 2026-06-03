@@ -13,10 +13,10 @@ export class Criteria {
     this.order = order
     this.limit = limit
     this.currentPage = offset
-    this.offset =
-      offset !== undefined && limit !== undefined
-        ? (offset - 1) * limit
-        : undefined
+
+    if (offset && limit) {
+      this.offset = offset > 0 ? (offset - 1) * limit : 0
+    } else this.offset = undefined
   }
 
   public hasFilters(): boolean {
