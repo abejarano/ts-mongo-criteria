@@ -1,5 +1,6 @@
 import { MongoCriteriaConverter, MongoQuery } from "./MongoCriteriaConverter"
 import { MongoClientFactory } from "./MongoClientFactory"
+import { MongoTransaction } from "./MongoTransaction"
 import { Criteria, Paginate } from "../criteria"
 import { AggregateRoot, AggregateRootClass } from "../AggregateRoot"
 import {
@@ -40,8 +41,11 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   /** Upserts an aggregate by delegating to persist with its id. */
-  public async upsert(entity: T): Promise<void> {
-    await this.persist(entity.getId()!, entity)
+  public async upsert(
+    entity: T,
+    transaction?: MongoTransaction
+  ): Promise<void> {
+    await this.persist(entity.getId()!, entity, transaction)
   }
 
   /** Lists entities by criteria and returns a paginated response. */
@@ -60,9 +64,18 @@ export abstract class MongoRepository<T extends AggregateRoot> {
    * @param {DeleteOptions} [options] - Optional parameters that modify the behavior of the delete operation.
    * @return {Promise<void>} A promise that resolves when the deletion is complete, or rejects if an error occurs.
    */
-  public async delete(filter: object, options?: DeleteOptions): Promise<void> {
+  public async delete(
+    filter: object,
+    options?: DeleteOptions,
+    transaction?: MongoTransaction
+  ): Promise<void> {
     const collection = await this.collection<T>()
-    await collection.deleteMany(filter, options)
+    const session = MongoTransaction.sessionFor(transaction)
+
+    await collection.deleteMany(
+      filter,
+      session ? { ...options, session } : options
+    )
   }
 
   protected abstract ensureIndexes(collection: Collection): Promise<void>
@@ -84,13 +97,17 @@ export abstract class MongoRepository<T extends AggregateRoot> {
 
   protected async updateOne(
     filter: object,
-    update: Document[] | UpdateFilter<any>
+    update: Document[] | UpdateFilter<any>,
+    transaction?: MongoTransaction
   ): Promise<void> {
     const collection = await this.collection()
+    const session = MongoTransaction.sessionFor(transaction)
 
-    await collection.updateOne(filter, update, {
-      upsert: true,
-    })
+    await collection.updateOne(
+      filter,
+      update,
+      session ? { upsert: true, session } : { upsert: true }
+    )
   }
 
   private async collectionRaw<U extends Document>(): Promise<Collection<U>> {
@@ -99,7 +116,11 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       .collection<U>(this.collectionName())
   }
 
-  private async persist(id: string, aggregateRoot: T): Promise<void> {
+  private async persist(
+    id: string,
+    aggregateRoot: T,
+    transaction?: MongoTransaction
+  ): Promise<void> {
     let primitives: any
 
     if (aggregateRoot.toPrimitives() instanceof Promise) {
@@ -115,7 +136,8 @@ export abstract class MongoRepository<T extends AggregateRoot> {
           ...primitives,
           id: id,
         },
-      }
+      },
+      transaction
     )
   }
 

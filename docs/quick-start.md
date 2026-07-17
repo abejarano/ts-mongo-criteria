@@ -207,6 +207,26 @@ import type { IRepository } from "@abejarano/ts-mongodb-criteria"
 export interface IUserRepository extends IRepository<User> {}
 ```
 
+## Atomic Transactions
+
+Use `MongoTransaction.run` when writes in one or more repositories must succeed
+or fail as one unit. Pass the transaction context to each write:
+
+```typescript
+import { MongoTransaction } from "@abejarano/ts-mongodb-criteria"
+
+await MongoTransaction.run(async (tx) => {
+  await userRepository.upsert(user, tx)
+  await profileRepository.upsert(profile, tx)
+  await invitationRepository.delete({ userId: user.getId() }, undefined, tx)
+})
+```
+
+An error from the callback rolls back all writes and is rethrown to the caller.
+MongoDB must run as a replica set or sharded cluster; standalone deployments do
+not support transactions. In this release, `one` and `list` do not receive the
+transaction context, so use the API for coordinated writes only.
+
 ## Basic Concepts
 
 ### 1. **Criteria** - The Main Query Builder
