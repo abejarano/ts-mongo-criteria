@@ -38,6 +38,7 @@ class TestEntity extends AggregateRoot {
 // Mock de MongoClientFactory
 jest.mock("../src/mongo/MongoClientFactory", () => {
   const mockCollection = {
+    findOne: jest.fn(),
     find: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
@@ -406,6 +407,50 @@ describe("MongoRepository", () => {
         { email: "john@test.com" },
         { $set: { name: "Jane" } },
         { upsert: true }
+      )
+    })
+
+    it("uses the transaction session for one, list, and pagination count", async () => {
+      const session = {
+        withTransaction: jest.fn(async (callback) => callback()),
+        endSession: jest.fn(),
+      }
+      ;(MongoClientFactory.createClient as jest.Mock).mockResolvedValue({
+        startSession: jest.fn().mockReturnValue(session),
+        db: jest.fn().mockReturnValue({
+          collection: jest.fn().mockReturnValue(mockCollection),
+        }),
+      })
+      mockCollection.findOne.mockResolvedValue({
+        _id: "507f1f77bcf86cd799439011",
+        id: "507f1f77bcf86cd799439011",
+        name: "John",
+        email: "john@test.com",
+        status: "active",
+      })
+      mockCollection.toArray.mockResolvedValue([])
+      mockCollection.countDocuments.mockResolvedValue(0)
+      const criteria = new Criteria(Filters.fromValues([]), Order.none(), 10, 1)
+
+      await MongoTransaction.run(async (transaction) => {
+        const found = await repository.one(
+          { email: "john@test.com" },
+          transaction
+        )
+        const listed = await repository.list(criteria, [], transaction)
+
+        expect(found).toBeInstanceOf(TestEntity)
+        expect(listed).toEqual({ nextPag: null, count: 0, results: [] })
+      })
+
+      expect(mockCollection.findOne).toHaveBeenCalledWith(
+        { email: "john@test.com" },
+        { session }
+      )
+      expect(mockCollection.find).toHaveBeenCalledWith({}, { session })
+      expect(mockCollection.countDocuments).toHaveBeenCalledWith(
+        {},
+        { session }
       )
     })
   })

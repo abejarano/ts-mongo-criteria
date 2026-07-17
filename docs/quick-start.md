@@ -219,13 +219,15 @@ await MongoTransaction.run(async (tx) => {
   await userRepository.upsert(user, tx)
   await profileRepository.upsert(profile, tx)
   await invitationRepository.delete({ userId: user.getId() }, undefined, tx)
+
+  const persistedUser = await userRepository.one({ id: user.getId() }, tx)
 })
 ```
 
 An error from the callback rolls back all writes and is rethrown to the caller.
 MongoDB must run as a replica set or sharded cluster; standalone deployments do
-not support transactions. In this release, `one` and `list` do not receive the
-transaction context, so use the API for coordinated writes only.
+not support transactions. Pass `tx` to `one` to read through the same session,
+or as the third argument to `list` after `fieldsToExclude`.
 
 ## Basic Concepts
 

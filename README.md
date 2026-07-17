@@ -214,6 +214,9 @@ await MongoTransaction.run(async (tx) => {
   await userRepository.upsert(user, tx)
   await auditRepository.upsert(auditEntry, tx)
   await sessionRepository.delete({ userId: user.getId() }, undefined, tx)
+
+  // Reads can observe writes made earlier in this transaction.
+  const persistedUser = await userRepository.one({ id: user.getId() }, tx)
 })
 ```
 
@@ -232,8 +235,8 @@ async deactivateUser(id: string, tx: MongoTransaction): Promise<void> {
 
 MongoDB transactions require a replica set or a sharded cluster; standalone
 MongoDB instances do not support them. This initial API applies the transaction
-context only to `upsert`, `delete`, and protected `updateOne`; `one` and `list`
-remain regular reads.
+context to `upsert`, `delete`, protected `updateOne`, `one`, and `list`.
+Pass `tx` as the third argument to `list` after `fieldsToExclude`.
 
 **Your First Query in 30 Seconds:**
 
