@@ -65,7 +65,7 @@
     "mongodb": "^7.0.0",
     "prettier": "^3.8.3",
     "rimraf": "^6.1.2",
-    "semantic-release": "^24.2.9",
+    "semantic-release": "^25.0.6",
     "ts-jest": "^29.1.2",
     "typescript": "^5.9.3"
   },
