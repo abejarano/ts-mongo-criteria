@@ -87,13 +87,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Verify npm OIDC is available
-        run: |
-          test "$GITHUB_ACTIONS" = "true"
-          test -n "$ACTIONS_ID_TOKEN_REQUEST_URL"
-          test -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
-
       - name: Release and Publish to npm
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: GITHUB_ACTIONS=true npx semantic-release
+        run: npx semantic-release

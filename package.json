@@ -81,7 +81,7 @@
     "url": "git+https://github.com/abejarano/ts-mongo-criteria.git"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org",
+    "registry": "https://registry.npmjs.org/",
     "access": "public"
   }
 }
