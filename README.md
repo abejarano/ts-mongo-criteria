@@ -201,6 +201,40 @@ export interface IUserRepository extends IRepository<User> {
 The goal of `IRepository` is to prevent signature drift (e.g. `upsert` returning
 `void` in your app while the base repository returns `ObjectId | null`).
 
+## Atomic Transactions
+
+`MongoTransaction.run` groups writes from one or more repositories into a
+single MongoDB transaction. Pass the `tx` context to every write that must be
+committed or rolled back together:
+
+```typescript
+import { MongoTransaction } from "@abejarano/ts-mongodb-criteria"
+
+await MongoTransaction.run(async (tx) => {
+  await userRepository.upsert(user, tx)
+  await auditRepository.upsert(auditEntry, tx)
+  await sessionRepository.delete({ userId: user.getId() }, undefined, tx)
+})
+```
+
+If any operation in the callback fails, MongoDB rolls back all the writes and
+the error is propagated to the caller. The MongoDB driver handles retryable
+transaction errors through `withTransaction`.
+
+Custom repositories can include their protected atomic updates in the same
+transaction by accepting and forwarding `MongoTransaction`:
+
+```typescript
+async deactivateUser(id: string, tx: MongoTransaction): Promise<void> {
+  await this.updateOne({ id }, { $set: { active: false } }, tx)
+}
+```
+
+MongoDB transactions require a replica set or a sharded cluster; standalone
+MongoDB instances do not support them. This initial API applies the transaction
+context only to `upsert`, `delete`, and protected `updateOne`; `one` and `list`
+remain regular reads.
+
 **Your First Query in 30 Seconds:**
 
 ```typescript

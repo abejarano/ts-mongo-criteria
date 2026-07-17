@@ -60,6 +60,7 @@ jest.mock("../src/mongo/MongoClientFactory", () => {
 
 // Import después del mock para evitar problemas de inicialización
 import { MongoClientFactory } from "../src/mongo/MongoClientFactory"
+import { MongoTransaction } from "../src/mongo/MongoTransaction"
 
 // Mock de MongoRepository para tests
 class TestRepository extends MongoRepository<TestEntity> {
@@ -73,6 +74,14 @@ class TestRepository extends MongoRepository<TestEntity> {
 
   protected async ensureIndexes(_collection: any): Promise<void> {
     // no-op for tests
+  }
+
+  async update(
+    filter: object,
+    update: object,
+    transaction?: MongoTransaction
+  ): Promise<void> {
+    await this.updateOne(filter, update, transaction)
   }
 }
 
@@ -326,6 +335,78 @@ describe("MongoRepository", () => {
       // Assert
       expect(result.results).toEqual(expectedResults)
       expect(result.results[0]).not.toHaveProperty("_id")
+    })
+  })
+
+  describe("transactions", () => {
+    const entity = new TestEntity(
+      "507f1f77bcf86cd799439011",
+      "John",
+      "john@test.com",
+      "active"
+    )
+
+    it("passes the transaction session to upsert, delete and protected updates", async () => {
+      const session = {
+        withTransaction: jest.fn(async (callback) => callback()),
+        endSession: jest.fn(),
+      }
+      ;(MongoClientFactory.createClient as jest.Mock).mockResolvedValue({
+        startSession: jest.fn().mockReturnValue(session),
+        db: jest.fn().mockReturnValue({
+          collection: jest.fn().mockReturnValue(mockCollection),
+        }),
+      })
+      mockCollection.updateOne = jest.fn()
+      mockCollection.deleteMany = jest.fn()
+
+      await MongoTransaction.run(async (transaction) => {
+        await repository.upsert(entity, transaction)
+        await repository.delete({ status: "inactive" }, undefined, transaction)
+        await repository.update(
+          { email: "john@test.com" },
+          { $set: { name: "Jane" } },
+          transaction
+        )
+      })
+
+      expect(mockCollection.updateOne).toHaveBeenNthCalledWith(
+        1,
+        { _id: expect.anything() },
+        expect.anything(),
+        { upsert: true, session }
+      )
+      expect(mockCollection.deleteMany).toHaveBeenCalledWith(
+        { status: "inactive" },
+        { session }
+      )
+      expect(mockCollection.updateOne).toHaveBeenNthCalledWith(
+        2,
+        { email: "john@test.com" },
+        { $set: { name: "Jane" } },
+        { upsert: true, session }
+      )
+    })
+
+    it("preserves write options when no transaction is provided", async () => {
+      mockCollection.updateOne = jest.fn()
+      mockCollection.deleteMany = jest.fn()
+
+      await repository.delete({ status: "inactive" })
+      await repository.update(
+        { email: "john@test.com" },
+        { $set: { name: "Jane" } }
+      )
+
+      expect(mockCollection.deleteMany).toHaveBeenCalledWith(
+        { status: "inactive" },
+        undefined
+      )
+      expect(mockCollection.updateOne).toHaveBeenCalledWith(
+        { email: "john@test.com" },
+        { $set: { name: "Jane" } },
+        { upsert: true }
+      )
     })
   })
 })
