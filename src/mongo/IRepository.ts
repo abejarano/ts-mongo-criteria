@@ -4,6 +4,8 @@ import { DeleteOptions } from "mongodb"
 import { MongoTransaction } from "./MongoTransaction"
 
 export interface IRepository<T extends AggregateRoot> {
+  many(filter: object, transaction?: MongoTransaction): Promise<T[]>
+
   one(filter: object, transaction?: MongoTransaction): Promise<T | null>
 
   list<D>(
