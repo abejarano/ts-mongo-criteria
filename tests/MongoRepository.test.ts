@@ -339,6 +339,85 @@ describe("MongoRepository", () => {
     })
   })
 
+  describe("many", () => {
+    it("should return hydrated entities matching the filter", async () => {
+      const mockResults = [
+        {
+          _id: "507f1f77bcf86cd799439011",
+          id: "507f1f77bcf86cd799439011",
+          name: "Alice",
+          email: "alice@test.com",
+          status: "active",
+        },
+        {
+          _id: "507f1f77bcf86cd799439012",
+          id: "507f1f77bcf86cd799439012",
+          name: "Bob",
+          email: "bob@test.com",
+          status: "active",
+        },
+      ]
+      mockCollection.toArray.mockResolvedValue(mockResults)
+
+      const results = await repository.many({ status: "active" })
+
+      expect(results).toHaveLength(2)
+      expect(results[0]).toBeInstanceOf(TestEntity)
+      expect(results[1]).toBeInstanceOf(TestEntity)
+      expect(results[0].toPrimitives()).toEqual({
+        id: "507f1f77bcf86cd799439011",
+        name: "Alice",
+        email: "alice@test.com",
+        status: "active",
+      })
+      expect(results[1].toPrimitives()).toEqual({
+        id: "507f1f77bcf86cd799439012",
+        name: "Bob",
+        email: "bob@test.com",
+        status: "active",
+      })
+      expect(mockCollection.find).toHaveBeenCalledWith(
+        { status: "active" },
+        undefined
+      )
+    })
+
+    it("should return an empty array when no documents match", async () => {
+      mockCollection.toArray.mockResolvedValue([])
+
+      const results = await repository.many({ status: "nonexistent" })
+
+      expect(results).toEqual([])
+      expect(mockCollection.find).toHaveBeenCalledWith(
+        { status: "nonexistent" },
+        undefined
+      )
+    })
+
+    it("should pass the session to find when a transaction is provided", async () => {
+      const session = {
+        withTransaction: jest.fn(async (callback) => callback()),
+        endSession: jest.fn(),
+      }
+      ;(MongoClientFactory.createClient as jest.Mock).mockResolvedValue({
+        startSession: jest.fn().mockReturnValue(session),
+        db: jest.fn().mockReturnValue({
+          collection: jest.fn().mockReturnValue(mockCollection),
+        }),
+      })
+      mockCollection.toArray.mockResolvedValue([])
+
+      await MongoTransaction.run(async (transaction) => {
+        await repository.many({ status: "active" }, transaction)
+      })
+
+      expect(mockCollection.find).toHaveBeenCalledWith(
+        { status: "active" },
+        { session }
+      )
+    })
+  })
+
   describe("transactions", () => {
     const entity = new TestEntity(
       "507f1f77bcf86cd799439011",

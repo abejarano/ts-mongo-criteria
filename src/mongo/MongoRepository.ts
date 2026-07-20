@@ -46,6 +46,24 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     })
   }
 
+  public async many(
+    filter: object,
+    transaction?: MongoTransaction
+  ): Promise<T[]> {
+    const collection = await this.collection<Document>()
+    const session = MongoTransaction.sessionFor(transaction)
+    const documents = await collection
+      .find(filter, session === undefined ? undefined : { session })
+      .toArray()
+
+    return documents.map((document) =>
+      this.aggregateRootClass.fromPrimitives({
+        ...document,
+        id: document._id.toString(),
+      })
+    )
+  }
+
   /** Upserts an aggregate by delegating to persist with its id. */
   public async upsert(
     entity: T,
