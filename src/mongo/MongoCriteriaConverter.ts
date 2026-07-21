@@ -1,32 +1,5 @@
 import { Criteria, Filter, Filters, Operator, Order } from "../criteria"
-import { OrCondition } from "../criteria/FilterValue"
-
-type MongoFilterOperator =
-  | "$eq"
-  | "$ne"
-  | "$gt"
-  | "$lt"
-  | "$regex"
-  | "$lte"
-  | "$gte"
-  | "$or"
-  | "$in"
-  | "$nin"
-
-type MongoFilterBetween = {
-  [p: string]: { $gte: MongoFilterValue; $lte: MongoFilterValue }
-}
-type MongoFilterValue = boolean | string | number | Date
-type MongoFilterArrayValue = MongoFilterValue[]
-type MongoFilterOperation = {
-  [operator in MongoFilterOperator]?: MongoFilterValue | MongoFilterArrayValue
-}
-type MongoFilter =
-  | { [field: string]: MongoFilterOperation }
-  | { [field: string]: { $not: MongoFilterOperation } }
-  | { $or: any[] }
-type MongoDirection = 1 | -1
-type MongoSort = { [field: string]: MongoDirection }
+import { MongoFilter, MongoFilterBetween, MongoSort } from "../types"
 
 export interface MongoQuery {
   filter: MongoFilter

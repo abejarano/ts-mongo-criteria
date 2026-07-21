@@ -10,6 +10,7 @@ import {
   ObjectId,
   UpdateFilter,
 } from "mongodb"
+import { MongoSort } from "../types"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
   private static indexRegistry = new Set<string>()
@@ -48,12 +49,20 @@ export abstract class MongoRepository<T extends AggregateRoot> {
 
   public async many(
     filter: object,
-    transaction?: MongoTransaction
+    options?: {
+      transaction?: MongoTransaction
+      fields?: string[]
+      sort: MongoSort
+    }
   ): Promise<T[]> {
     const collection = await this.collection<Document>()
-    const session = MongoTransaction.sessionFor(transaction)
+    const session = options?.transaction
+      ? MongoTransaction.sessionFor(options?.transaction)
+      : undefined
+
     const documents = await collection
       .find(filter, session === undefined ? undefined : { session })
+      .sort(options?.sort ? options?.sort : { _id: -1 })
       .toArray()
 
     return documents.map((document) =>
@@ -65,11 +74,8 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   /** Upserts an aggregate by delegating to persist with its id. */
-  public async upsert(
-    entity: T,
-    transaction?: MongoTransaction
-  ): Promise<void> {
-    await this.persist(entity.getId()!, entity, transaction)
+  public async upsert(entity: T, transaction?: MongoTransaction): Promise<T> {
+    return await this.persist(entity.getId()!, entity, transaction)
   }
 
   /** Lists entities by criteria and returns a paginated response. */
@@ -149,7 +155,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     id: string,
     aggregateRoot: T,
     transaction?: MongoTransaction
-  ): Promise<void> {
+  ): Promise<T> {
     let primitives: any
 
     if (aggregateRoot.toPrimitives() instanceof Promise) {
@@ -158,16 +164,23 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       primitives = aggregateRoot.toPrimitives()
     }
 
+    const mongoId = new ObjectId(id)
+
     await this.updateOne(
-      { _id: new ObjectId(id) },
+      { _id: mongoId },
       {
         $set: {
           ...primitives,
-          id: id,
+          id: mongoId.toString(),
         },
       },
       transaction
     )
+
+    return this.aggregateRootClass.fromPrimitives({
+      ...primitives,
+      id: mongoId.toString(),
+    })
   }
 
   private async searchByCriteria<D>(

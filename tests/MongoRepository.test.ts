@@ -340,7 +340,11 @@ describe("MongoRepository", () => {
   })
 
   describe("many", () => {
-    it("should return hydrated entities matching the filter", async () => {
+    beforeEach(() => {
+      mockCollection.sort = jest.fn().mockReturnThis()
+    })
+
+    it("should return hydrated entities matching the filter with default sort", async () => {
       const mockResults = [
         {
           _id: "507f1f77bcf86cd799439011",
@@ -380,6 +384,7 @@ describe("MongoRepository", () => {
         { status: "active" },
         undefined
       )
+      expect(mockCollection.sort).toHaveBeenCalledWith({ _id: -1 })
     })
 
     it("should return an empty array when no documents match", async () => {
@@ -392,6 +397,18 @@ describe("MongoRepository", () => {
         { status: "nonexistent" },
         undefined
       )
+      expect(mockCollection.sort).toHaveBeenCalledWith({ _id: -1 })
+    })
+
+    it("should apply custom sort when provided", async () => {
+      mockCollection.toArray.mockResolvedValue([])
+
+      await repository.many(
+        { status: "active" },
+        { sort: { name: 1 } }
+      )
+
+      expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
     })
 
     it("should pass the session to find when a transaction is provided", async () => {
@@ -408,13 +425,17 @@ describe("MongoRepository", () => {
       mockCollection.toArray.mockResolvedValue([])
 
       await MongoTransaction.run(async (transaction) => {
-        await repository.many({ status: "active" }, transaction)
+        await repository.many(
+          { status: "active" },
+          { transaction, sort: { name: 1 } }
+        )
       })
 
       expect(mockCollection.find).toHaveBeenCalledWith(
         { status: "active" },
         { session }
       )
+      expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
     })
   })
 
