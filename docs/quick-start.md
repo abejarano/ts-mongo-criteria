@@ -125,22 +125,18 @@ console.log("✅ Multi-filter criteria created!")
 // Define your entity
 class User extends AggregateRoot {
   constructor(
-    private id: string,
+    id: string,
     private name: string,
     private email: string,
     private status: string,
     private age: number
   ) {
-    super()
-  }
-
-  getId(): string {
-    return this.id
+    super(id)
   }
 
   toPrimitives(): any {
     return {
-      id: this.id,
+      id: this.getId(),
       name: this.name,
       email: this.email,
       status: this.status,
@@ -148,7 +144,7 @@ class User extends AggregateRoot {
     }
   }
 
-  static override fromPrimitives(data: any): User {
+  static fromPrimitives(data: any): User {
     return new User(data.id, data.name, data.email, data.status, data.age)
   }
 
@@ -413,22 +409,18 @@ const affordableElectronics = new Criteria(
 // Your domain entity
 class Product extends AggregateRoot {
   constructor(
-    private id: string,
+    id: string,
     private name: string,
     private price: number,
     private category: string,
     private status: string
   ) {
-    super()
-  }
-
-  getId(): string {
-    return this.id
+    super(id)
   }
 
   toPrimitives(): any {
     return {
-      id: this.id,
+      id: this.getId(),
       name: this.name,
       price: this.price,
       category: this.category,
@@ -436,7 +428,7 @@ class Product extends AggregateRoot {
     }
   }
 
-  static override fromPrimitives(data: any): Product {
+  static fromPrimitives(data: any): Product {
     return new Product(
       data.id,
       data.name,

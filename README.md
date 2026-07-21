@@ -6,7 +6,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-43%2F43%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-46%2F46%20passing-brightgreen.svg)](#testing)
 
 > A robust, type-safe implementation of the **Criteria Pattern** for MongoDB queries in TypeScript. Build complex database queries dynamically with a fluent, composable API designed following Domain-Driven Design (DDD) and Clean Architecture principles.
 
@@ -184,7 +184,7 @@ MongoRepository provides ready-to-use public methods for repositories that exten
 - `list(criteria, fieldsToExclude?)` for paginated queries
 - `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort }`
 - `one(filter, transaction?)` to fetch a single entity
-- `upsert(entity, transaction?)` to persist an aggregate (returns the hydrated entity)
+- `upsert(entity, transaction?)` to persist an aggregate
   Internal helpers are private, so repositories should call these public methods
   directly.
 
@@ -199,8 +199,8 @@ export interface IUserRepository extends IRepository<User> {
 }
 ```
 
-The goal of `IRepository` is to prevent signature drift (e.g. `upsert` returning
-`void` in your app while the base repository returns `ObjectId | null`).
+The goal of `IRepository` is to prevent signature drift between your app's
+interfaces and the library's repository return types.
 
 ## Atomic Transactions
 
@@ -388,7 +388,7 @@ const criteria = new Criteria(Filters.fromValues(filters), Order.none())
 
 ## 🧪 Testing
 
-The library includes comprehensive test coverage (43/43 tests passing).
+The library includes comprehensive test coverage (46/46 tests passing).
 
 ```bash
 # Run all tests
