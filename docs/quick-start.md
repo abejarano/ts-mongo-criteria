@@ -125,13 +125,12 @@ console.log("✅ Multi-filter criteria created!")
 // Define your entity
 class User extends AggregateRoot {
   constructor(
-    id: string,
     private name: string,
     private email: string,
     private status: string,
     private age: number
   ) {
-    super(id)
+    super()
   }
 
   toPrimitives(): any {
@@ -144,8 +143,8 @@ class User extends AggregateRoot {
     }
   }
 
-  static fromPrimitives(data: any): User {
-    return new User(data.id, data.name, data.email, data.status, data.age)
+  static fromPrimitives(data: Record<string, unknown>): User {
+    return new User(data.name, data.email, data.status, data.age)
   }
 
   // Getters
@@ -223,7 +222,7 @@ await MongoTransaction.run(async (tx) => {
 An error from the callback rolls back all writes and is rethrown to the caller.
 MongoDB must run as a replica set or sharded cluster; standalone deployments do
 not support transactions. Pass `tx` to `one` to read through the same session,
-or as the third argument to `list` after `fieldsToExclude`.
+or as the second argument to `list`.
 
 ## Basic Concepts
 
@@ -409,13 +408,12 @@ const affordableElectronics = new Criteria(
 // Your domain entity
 class Product extends AggregateRoot {
   constructor(
-    id: string,
     private name: string,
     private price: number,
     private category: string,
     private status: string
   ) {
-    super(id)
+    super()
   }
 
   toPrimitives(): any {
@@ -428,9 +426,8 @@ class Product extends AggregateRoot {
     }
   }
 
-  static fromPrimitives(data: any): Product {
+  static fromPrimitives(data: Record<string, unknown>): Product {
     return new Product(
-      data.id,
       data.name,
       data.price,
       data.category,
@@ -529,15 +526,15 @@ async function examples() {
 
   // Find all available products
   const availableProducts = await productRepo.findAvailableProducts()
-  console.log(`Found ${availableProducts.length} available products`)
+  console.log(`Found ${availableProducts.count} available products`)
 
   // Find electronics
   const electronics = await productRepo.findByCategory("electronics")
-  console.log(`Found ${electronics.length} electronics`)
+  console.log(`Found ${electronics.count} electronics`)
 
   // Search for smartphones
   const smartphones = await productRepo.searchProducts("smartphone")
-  console.log(`Found ${smartphones.length} smartphones`)
+  console.log(`Found ${smartphones.count} smartphones`)
 }
 ```
 

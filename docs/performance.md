@@ -621,7 +621,7 @@ class UserRepository extends MongoRepository<User> {
       Order.desc("createdAt")
     )
 
-    return this.list(criteria, ["internalNotes", "temporaryData"])
+    return this.list(criteria)
   }
 }
 ```
@@ -644,17 +644,13 @@ class PerformanceMonitoringRepository<
   }
 
   async listWithMonitoring(
-    criteria: Criteria,
-    fieldsToExclude?: string[]
+    criteria: Criteria
   ): Promise<Paginate<T>> {
     const startTime = Date.now()
     const queryFingerprint = this.generateQueryFingerprint(criteria)
 
     try {
-      const results = await this.list<T>(
-        criteria,
-        fieldsToExclude ? fieldsToExclude : []
-      )
+      const results = await this.list(criteria)
       const duration = Date.now() - startTime
 
       this.logQueryPerformance(queryFingerprint, duration, results.count, false)

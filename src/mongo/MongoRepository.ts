@@ -15,8 +15,6 @@ import { MongoSort } from "../types"
 export abstract class MongoRepository<T extends AggregateRoot> {
   private static indexRegistry = new Set<string>()
   private criteriaConverter: MongoCriteriaConverter
-  private query!: MongoQuery
-  private criteria!: Criteria
 
   protected constructor(
     private readonly aggregateRootClass: AggregateRootClass<T>
@@ -41,10 +39,13 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       return null
     }
 
-    return this.aggregateRootClass.fromPrimitives({
-      ...result,
-      id: result._id.toString(),
-    })
+    const { _id, ...primitives } = result
+
+    const entity = this.aggregateRootClass.fromPrimitives(primitives)
+
+    entity.assignId(_id.toString())
+
+    return entity
   }
 
   /**
@@ -56,31 +57,10 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     filter: object,
     options?: {
       transaction?: MongoTransaction
-      fieldsToExclude?: string[]
       sort?: Order
     }
   ): Promise<T[]> {
     const collection = await this.collection<Document>()
-    const session = options?.transaction
-      ? MongoTransaction.sessionFor(options?.transaction)
-      : undefined
-
-    const hasFields =
-      options?.fieldsToExclude && options.fieldsToExclude.length > 0
-    const projection: { [key: string]: 0 } | undefined = hasFields
-      ? {}
-      : undefined
-    if (hasFields) {
-      options!.fieldsToExclude!.forEach((field) => {
-        projection![field] = 0
-      })
-    }
-
-    const findOptions = session
-      ? { ...(projection ? { projection } : {}), session }
-      : projection
-        ? { projection }
-        : undefined
 
     let order: MongoSort = { _id: -1 }
     if (options?.sort?.hasOrder()) {
@@ -93,17 +73,22 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       }
     }
 
+    const session = MongoTransaction.sessionFor(options?.transaction)
+
     const documents = await collection
-      .find(filter, findOptions)
+      .find(filter, session ? { session } : undefined)
       .sort(order)
       .toArray()
 
-    return documents.map((document) =>
-      this.aggregateRootClass.fromPrimitives({
-        ...document,
-        id: document._id.toString(),
-      })
-    )
+    return documents.map((document) => {
+      const { _id, ...primitives } = document
+
+      const entity = this.aggregateRootClass.fromPrimitives(primitives)
+
+      entity.assignId(_id.toString())
+
+      return entity
+    })
   }
 
   /** Upserts an aggregate by delegating to persist with its id. */
@@ -135,17 +120,14 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   /** Lists entities by criteria and returns a paginated response. */
-  public async list<D>(
+  public async list(
     criteria: Criteria,
-    fieldsToExclude: string[] = [],
     transaction?: MongoTransaction
-  ): Promise<Paginate<D>> {
-    const documents = await this.searchByCriteria<D>(
-      criteria,
-      fieldsToExclude,
-      transaction
-    )
-    return this.paginate<D>(documents, transaction)
+  ): Promise<Paginate<T>> {
+    const query = this.criteriaConverter.convert(criteria)
+
+    const documents = await this.searchByCriteria(query, transaction)
+    return this.paginate(documents, query, criteria, transaction)
   }
 
   /**
@@ -208,71 +190,58 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       .collection<U>(this.collectionName())
   }
 
-  private async searchByCriteria<D>(
-    criteria: Criteria,
-    fieldsToExclude: string[] = [],
+  private async searchByCriteria(
+    query: MongoQuery,
     transaction?: MongoTransaction
-  ): Promise<D[]> {
-    this.criteria = criteria
-    this.query = this.criteriaConverter.convert(criteria)
-
+  ): Promise<T[]> {
     const collection = await this.collection()
+
     const session = MongoTransaction.sessionFor(transaction)
 
-    if (fieldsToExclude.length === 0) {
-      const results = await collection
-        .find(this.query.filter as any, session ? { session } : {})
-        .sort(this.query.sort)
-        .skip(this.query.skip)
-        .limit(this.query.limit)
-        .toArray()
-
-      return results.map(({ _id, ...rest }) => rest as D)
-    }
-
-    const projection: { [key: string]: 0 } = {}
-    fieldsToExclude.forEach((field) => {
-      projection[field] = 0
-    })
-
     const results = await collection
-      .find(
-        this.query.filter as any,
-        session ? { projection, session } : { projection }
-      )
-      .sort(this.query.sort)
-      .skip(this.query.skip)
-      .limit(this.query.limit)
+      .find(query.filter as any, session ? { session } : undefined)
+      .sort(query.sort)
+      .skip(query.skip)
+      .limit(query.limit)
       .toArray()
 
-    return results.map(({ _id, ...rest }) => rest as D)
+    return results.map(({ _id, ...rest }) => {
+      const entity = this.aggregateRootClass.fromPrimitives(rest)
+      entity.assignId(_id.toString())
+
+      return entity
+    })
   }
 
-  private async paginate<T>(
+  private async paginate(
     documents: T[],
+    query: MongoQuery,
+    criteria: Criteria,
     transaction?: MongoTransaction
   ): Promise<Paginate<T>> {
     const collection = await this.collection()
     const session = MongoTransaction.sessionFor(transaction)
-    const count = session
-      ? await collection.countDocuments(this.query.filter as any, { session })
-      : await collection.countDocuments(this.query.filter as any)
 
-    const limit = this.criteria?.limit || 10
-    const currentPage = this.criteria?.currentPage || 1
+    const count = await collection.countDocuments(
+      query.filter as any,
+      session ? { session } : undefined
+    )
 
-    const hasNextPage: boolean = currentPage * limit < count
+    const limit = criteria.limit
+    const currentPage = criteria.currentPage
+
+    const hasNextPage: boolean = limit > 0 && currentPage * limit < count
 
     if (documents.length === 0) {
       return {
         nextPag: null,
-        count: 0,
+        count,
         results: [],
       }
     }
 
     return {
-      nextPag: hasNextPage ? Number(this.criteria.currentPage) + 1 : null,
+      nextPag: hasNextPage ? Number(criteria.currentPage) + 1 : null,
       count: count,
       results: documents,
     }

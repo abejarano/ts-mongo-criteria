@@ -4,19 +4,29 @@ import { Order } from "./Order"
 export class Criteria {
   readonly filters: Filters
   readonly order: Order
-  readonly limit?: number
-  readonly offset?: number
-  readonly currentPage?: number
+  readonly limit: number
+  readonly offset: number
+  readonly currentPage: number
 
-  constructor(filters: Filters, order: Order, limit?: number, offset?: number) {
+  constructor(
+    filters: Filters,
+    order: Order,
+    limit: number = 10,
+    currentPage: number = 1
+  ) {
+    if (!Number.isInteger(limit) || limit <= 0) {
+      throw new Error("CRITERIA_LIMIT_MUST_BE_A_POSITIVE_INTEGER")
+    }
+
+    if (!Number.isInteger(currentPage) || currentPage <= 0) {
+      throw new Error("CRITERIA_PAGE_MUST_BE_A_POSITIVE_INTEGER")
+    }
+
     this.filters = filters
     this.order = order
     this.limit = limit
-    this.currentPage = offset
-
-    if (offset && limit) {
-      this.offset = offset > 0 ? (offset - 1) * limit : 0
-    } else this.offset = undefined
+    this.currentPage = currentPage
+    this.offset = (currentPage - 1) * limit
   }
 
   public hasFilters(): boolean {

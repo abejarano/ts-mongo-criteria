@@ -1,10 +1,6 @@
 export abstract class AggregateRoot {
   private aggregateId?: string
 
-  protected constructor(id?: string) {
-    this.aggregateId = id
-  }
-
   getId(): string | undefined {
     return this.aggregateId
   }
@@ -21,5 +17,5 @@ export abstract class AggregateRoot {
 }
 
 export type AggregateRootClass<T extends AggregateRoot> = {
-  fromPrimitives(data: Record<string, unknown> & { readonly id: string }): T
+  fromPrimitives(data: Record<string, unknown>): T
 }

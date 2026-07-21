@@ -9,12 +9,11 @@ import { AggregateRoot } from "../src/AggregateRoot"
 // Mock de AggregateRoot para tests
 class TestEntity extends AggregateRoot {
   constructor(
-    id: string,
     private name: string,
     private email: string,
     private status: string
   ) {
-    super(id)
+    super()
   }
 
   toPrimitives(): any {
@@ -27,7 +26,7 @@ class TestEntity extends AggregateRoot {
   }
 
   static fromPrimitives(data: any): TestEntity {
-    return new TestEntity(data.id, data.name, data.email, data.status)
+    return new TestEntity(data.name, data.email, data.status)
   }
 }
 
@@ -117,11 +116,6 @@ describe("MongoRepository", () => {
         },
       ]
 
-      const expectedResults = [
-        { id: "1", name: "John", email: "john@test.com", status: "active" },
-        { id: "2", name: "Jane", email: "jane@test.com", status: "active" },
-      ]
-
       mockCollection.toArray.mockResolvedValue(mockResults)
       mockCollection.countDocuments.mockResolvedValue(2)
 
@@ -144,74 +138,34 @@ describe("MongoRepository", () => {
       const result = await repository.list(criteria)
 
       // Assert
-      expect(result).toEqual({
-        nextPag: null,
-        count: 2,
-        results: expectedResults,
+      expect(result.count).toBe(2)
+      expect(result.nextPag).toBeNull()
+      expect(result.results).toHaveLength(2)
+      expect(result.results[0]).toBeInstanceOf(TestEntity)
+      expect(result.results[1]).toBeInstanceOf(TestEntity)
+      expect(result.results[0].toPrimitives()).toEqual({
+        id: "objectId1",
+        name: "John",
+        email: "john@test.com",
+        status: "active",
+      })
+      expect(result.results[1].toPrimitives()).toEqual({
+        id: "objectId2",
+        name: "Jane",
+        email: "jane@test.com",
+        status: "active",
       })
       expect(mockCollection.find).toHaveBeenCalledWith(
         { status: { $eq: "active" } },
-        {}
+        undefined
       )
       expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
       expect(mockCollection.skip).toHaveBeenCalledWith(0)
       expect(mockCollection.limit).toHaveBeenCalledWith(10)
-      expect(mockCollection.countDocuments).toHaveBeenCalledWith({
-        status: { $eq: "active" },
-      })
-    })
-
-    it("should list with field exclusion", async () => {
-      // Arrange
-      const mockResults = [
-        { _id: "objectId1", id: "1", name: "John", status: "active" },
-        { _id: "objectId2", id: "2", name: "Jane", status: "active" },
-      ]
-
-      const expectedResults = [
-        { id: "1", name: "John", status: "active" },
-        { id: "2", name: "Jane", status: "active" },
-      ]
-
-      mockCollection.toArray.mockResolvedValue(mockResults)
-      mockCollection.countDocuments.mockResolvedValue(2)
-
-      const filters = [
-        new Map([
-          ["field", "status"],
-          ["operator", Operator.EQUAL],
-          ["value", "active"],
-        ]),
-      ]
-
-      const criteria = new Criteria(
-        Filters.fromValues(filters),
-        Order.fromValues("name", OrderTypes.ASC),
-        10,
-        1
-      )
-
-      const fieldsToExclude = ["email", "createdAt"]
-
-      // Act
-      const result = await repository.list(criteria, fieldsToExclude)
-
-      // Assert
-      expect(result).toEqual({
-        nextPag: null,
-        count: 2,
-        results: expectedResults,
-      })
-      expect(mockCollection.find).toHaveBeenCalledWith(
+      expect(mockCollection.countDocuments).toHaveBeenCalledWith(
         { status: { $eq: "active" } },
-        { projection: { email: 0, createdAt: 0 } }
+        undefined
       )
-      expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
-      expect(mockCollection.skip).toHaveBeenCalledWith(0)
-      expect(mockCollection.limit).toHaveBeenCalledWith(10)
-      expect(mockCollection.countDocuments).toHaveBeenCalledWith({
-        status: { $eq: "active" },
-      })
     })
 
     it("should handle multiple filters with pagination", async () => {
@@ -224,10 +178,6 @@ describe("MongoRepository", () => {
           email: "bob@test.com",
           status: "active",
         },
-      ]
-
-      const expectedResults = [
-        { id: "3", name: "Bob", email: "bob@test.com", status: "active" },
       ]
 
       mockCollection.toArray.mockResolvedValue(mockResults)
@@ -257,25 +207,30 @@ describe("MongoRepository", () => {
       const result = await repository.list(criteria)
 
       // Assert
-      expect(result).toEqual({
-        nextPag: 3,
-        count: 12,
-        results: expectedResults,
+      expect(result.count).toBe(12)
+      expect(result.nextPag).toBe(3)
+      expect(result.results).toHaveLength(1)
+      expect(result.results[0]).toBeInstanceOf(TestEntity)
+      expect(result.results[0].toPrimitives()).toEqual({
+        id: "objectId3",
+        name: "Bob",
+        email: "bob@test.com",
+        status: "active",
       })
       expect(mockCollection.find).toHaveBeenCalledWith(
         {
           status: { $eq: "active" },
           name: { $regex: "Bo" },
         },
-        {}
+        undefined
       )
       expect(mockCollection.sort).toHaveBeenCalledWith({ createdAt: -1 })
       expect(mockCollection.skip).toHaveBeenCalledWith(5) // (page 2 - 1) * limit 5
       expect(mockCollection.limit).toHaveBeenCalledWith(5)
-      expect(mockCollection.countDocuments).toHaveBeenCalledWith({
-        status: { $eq: "active" },
-        name: { $regex: "Bo" },
-      })
+      expect(mockCollection.countDocuments).toHaveBeenCalledWith(
+        { status: { $eq: "active" }, name: { $regex: "Bo" } },
+        undefined
+      )
     })
 
     it("should return empty results when no results found", async () => {
@@ -308,9 +263,10 @@ describe("MongoRepository", () => {
         results: [],
       })
       expect(mockCollection.toArray).toHaveBeenCalled()
-      expect(mockCollection.countDocuments).toHaveBeenCalledWith({
-        status: { $eq: "nonexistent" },
-      })
+      expect(mockCollection.countDocuments).toHaveBeenCalledWith(
+        { status: { $eq: "nonexistent" } },
+        undefined
+      )
     })
 
     it("should remove _id field from results", async () => {
@@ -318,8 +274,6 @@ describe("MongoRepository", () => {
       const mockResults = [
         { _id: "shouldBeRemoved", id: "1", name: "Test", data: "value" },
       ]
-
-      const expectedResults = [{ id: "1", name: "Test", data: "value" }]
 
       mockCollection.toArray.mockResolvedValue(mockResults)
       mockCollection.countDocuments.mockResolvedValue(1)
@@ -330,8 +284,73 @@ describe("MongoRepository", () => {
       const result = await repository.list(criteria)
 
       // Assert
-      expect(result.results).toEqual(expectedResults)
-      expect(result.results[0]).not.toHaveProperty("_id")
+      expect(result.results[0]).toBeInstanceOf(TestEntity)
+      const primitives = result.results[0].toPrimitives()
+      expect(primitives).not.toHaveProperty("_id")
+      expect(primitives.id).toBe("shouldBeRemoved")
+    })
+
+    it("should apply default pagination when criteria has no explicit limit or page", async () => {
+      mockCollection.toArray.mockResolvedValue([])
+      mockCollection.countDocuments.mockResolvedValue(0)
+
+      const criteria = new Criteria(Filters.fromValues([]), Order.none())
+
+      await repository.list(criteria)
+
+      expect(mockCollection.skip).toHaveBeenCalledWith(0)
+      expect(mockCollection.limit).toHaveBeenCalledWith(10)
+    })
+
+    it("should preserve total count even when the page is out of range", async () => {
+      mockCollection.toArray.mockResolvedValue([])
+      mockCollection.countDocuments.mockResolvedValue(35)
+
+      const criteria = new Criteria(
+        Filters.fromValues([]),
+        Order.none(),
+        10,
+        5
+      )
+
+      const result = await repository.list(criteria)
+
+      expect(result).toEqual({
+        nextPag: null,
+        count: 35,
+        results: [],
+      })
+    })
+
+    it("should return nextPag 2 when there are more results on page 1", async () => {
+      mockCollection.toArray.mockResolvedValue([{ _id: "1", id: "1", name: "Test", email: "test@test.com", status: "active" }])
+      mockCollection.countDocuments.mockResolvedValue(25)
+
+      const criteria = new Criteria(
+        Filters.fromValues([]),
+        Order.none()
+      )
+
+      const result = await repository.list(criteria)
+
+      expect(result.nextPag).toBe(2)
+      expect(result.count).toBe(25)
+    })
+
+    it("should return null nextPag on the last page", async () => {
+      mockCollection.toArray.mockResolvedValue([{ _id: "1", id: "1", name: "Test", email: "test@test.com", status: "active" }])
+      mockCollection.countDocuments.mockResolvedValue(25)
+
+      const criteria = new Criteria(
+        Filters.fromValues([]),
+        Order.none(),
+        10,
+        3
+      )
+
+      const result = await repository.list(criteria)
+
+      expect(result.nextPag).toBeNull()
     })
   })
 
@@ -439,7 +458,6 @@ describe("MongoRepository", () => {
     it("should assign a new id when entity has no id", async () => {
       mockCollection.updateOne = jest.fn()
       const entityWithoutId = new TestEntity(
-        undefined as any,
         "NoID",
         "noid@test.com",
         "pending"
@@ -454,11 +472,11 @@ describe("MongoRepository", () => {
     it("should keep the existing id when entity has one", async () => {
       mockCollection.updateOne = jest.fn()
       const entity = new TestEntity(
-        "507f1f77bcf86cd799439011",
         "John",
         "john@test.com",
         "active"
       )
+      entity.assignId("507f1f77bcf86cd799439011")
 
       await repository.upsert(entity)
 
@@ -469,11 +487,11 @@ describe("MongoRepository", () => {
     it("should pass primitives in $set with id from entity", async () => {
       mockCollection.updateOne = jest.fn()
       const entity = new TestEntity(
-        "507f1f77bcf86cd799439011",
         "John",
         "john@test.com",
         "active"
       )
+      entity.assignId("507f1f77bcf86cd799439011")
 
       await repository.upsert(entity)
 
@@ -489,7 +507,6 @@ describe("MongoRepository", () => {
 
   describe("transactions", () => {
     const entity = new TestEntity(
-      "507f1f77bcf86cd799439011",
       "John",
       "john@test.com",
       "active"
@@ -585,7 +602,7 @@ describe("MongoRepository", () => {
           { email: "john@test.com" },
           transaction
         )
-        const listed = await repository.list(criteria, [], transaction)
+        const listed = await repository.list(criteria, transaction)
 
         expect(found).toBeInstanceOf(TestEntity)
         expect(listed).toEqual({ nextPag: null, count: 0, results: [] })

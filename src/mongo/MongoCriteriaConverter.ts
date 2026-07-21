@@ -46,8 +46,8 @@ export class MongoCriteriaConverter {
       sort: criteria.order.hasOrder()
         ? this.generateSort(criteria.order)
         : { _id: -1 },
-      skip: criteria.offset || 0,
-      limit: criteria.limit || 0,
+      skip: criteria.offset,
+      limit: criteria.limit,
     }
   }
 
