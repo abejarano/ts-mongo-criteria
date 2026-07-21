@@ -52,7 +52,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     options?: {
       transaction?: MongoTransaction
       fields?: string[]
-      sort: MongoSort
+      sort?: MongoSort
     }
   ): Promise<T[]> {
     const collection = await this.collection<Document>()
@@ -60,8 +60,15 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       ? MongoTransaction.sessionFor(options?.transaction)
       : undefined
 
+    const projection: { [key: string]: 1 } = {}
+    if (options?.fields) {
+      options?.fields.forEach((field) => {
+        projection[field] = 1
+      })
+    }
+
     const documents = await collection
-      .find(filter, session === undefined ? undefined : { session })
+      .find(filter, session ? { projection, session } : { projection })
       .sort(options?.sort ? options?.sort : { _id: -1 })
       .toArray()
 
@@ -86,6 +93,10 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     const mongoId =
       currentId === undefined ? new ObjectId() : new ObjectId(currentId)
 
+    if (currentId === undefined) {
+      entity.assignId(mongoId.toString())
+    }
+
     await this.updateOne(
       { _id: mongoId },
       {
@@ -95,10 +106,6 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       },
       transaction
     )
-
-    if (currentId === undefined) {
-      entity.assignId(mongoId.toString())
-    }
   }
 
   /** Lists entities by criteria and returns a paginated response. */

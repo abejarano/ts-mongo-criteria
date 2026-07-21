@@ -10,7 +10,7 @@ export interface IRepository<T extends AggregateRoot> {
     options?: {
       transaction?: MongoTransaction
       fields?: string[]
-      sort: MongoSort
+      sort?: MongoSort
     }
   ): Promise<T[]>
 
