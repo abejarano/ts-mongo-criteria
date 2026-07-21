@@ -1,7 +1,7 @@
 import { MongoCriteriaConverter, MongoQuery } from "./MongoCriteriaConverter"
 import { MongoClientFactory } from "./MongoClientFactory"
 import { MongoTransaction } from "./MongoTransaction"
-import { Criteria, Paginate } from "../criteria"
+import { Criteria, Order, Paginate } from "../criteria"
 import { AggregateRoot, AggregateRootClass } from "../AggregateRoot"
 import {
   Collection,
@@ -47,12 +47,17 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     })
   }
 
+  /**
+   *
+   * @param filter
+   * @param options
+   */
   public async many(
     filter: object,
     options?: {
       transaction?: MongoTransaction
-      fields?: string[]
-      sort?: MongoSort
+      fieldsToExclude?: string[]
+      sort?: Order
     }
   ): Promise<T[]> {
     const collection = await this.collection<Document>()
@@ -60,11 +65,14 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       ? MongoTransaction.sessionFor(options?.transaction)
       : undefined
 
-    const hasFields = options?.fields && options.fields.length > 0
-    const projection: { [key: string]: 1 } | undefined = hasFields ? {} : undefined
+    const hasFields =
+      options?.fieldsToExclude && options.fieldsToExclude.length > 0
+    const projection: { [key: string]: 0 } | undefined = hasFields
+      ? {}
+      : undefined
     if (hasFields) {
-      options!.fields!.forEach((field) => {
-        projection![field] = 1
+      options!.fieldsToExclude!.forEach((field) => {
+        projection![field] = 0
       })
     }
 
@@ -74,9 +82,20 @@ export abstract class MongoRepository<T extends AggregateRoot> {
         ? { projection }
         : undefined
 
+    let order: MongoSort = { _id: -1 }
+    if (options?.sort?.hasOrder()) {
+      order = {
+        [options?.sort.orderBy.value === "id"
+          ? "_id"
+          : options?.sort.orderBy.value]: options.sort.orderType.isAsc()
+          ? 1
+          : -1,
+      }
+    }
+
     const documents = await collection
       .find(filter, findOptions)
-      .sort(options?.sort ? options?.sort : { _id: -1 })
+      .sort(order)
       .toArray()
 
     return documents.map((document) =>
@@ -134,6 +153,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
    *
    * @param {object} filter - The query to match documents that should be deleted.
    * @param {DeleteOptions} [options] - Optional parameters that modify the behavior of the delete operation.
+   * @param transaction
    * @return {Promise<void>} A promise that resolves when the deletion is complete, or rejects if an error occurs.
    */
   public async delete(

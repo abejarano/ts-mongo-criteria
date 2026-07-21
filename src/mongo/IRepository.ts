@@ -2,15 +2,15 @@ import { Criteria, Paginate } from "../criteria"
 import { AggregateRoot } from "../AggregateRoot"
 import { DeleteOptions } from "mongodb"
 import { MongoTransaction } from "./MongoTransaction"
-import { MongoSort } from "../types"
+import { Order } from "../criteria"
 
 export interface IRepository<T extends AggregateRoot> {
   many(
     filter: object,
     options?: {
       transaction?: MongoTransaction
-      fields?: string[]
-      sort?: MongoSort
+      fieldsToExclude?: string[]
+      sort?: Order
     }
   ): Promise<T[]>
 
