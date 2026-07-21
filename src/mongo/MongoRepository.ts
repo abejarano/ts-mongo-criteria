@@ -60,15 +60,22 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       ? MongoTransaction.sessionFor(options?.transaction)
       : undefined
 
-    const projection: { [key: string]: 1 } = {}
-    if (options?.fields) {
-      options?.fields.forEach((field) => {
-        projection[field] = 1
+    const hasFields = options?.fields && options.fields.length > 0
+    const projection: { [key: string]: 1 } | undefined = hasFields ? {} : undefined
+    if (hasFields) {
+      options!.fields!.forEach((field) => {
+        projection![field] = 1
       })
     }
 
+    const findOptions = session
+      ? { ...(projection ? { projection } : {}), session }
+      : projection
+        ? { projection }
+        : undefined
+
     const documents = await collection
-      .find(filter, session ? { projection, session } : { projection })
+      .find(filter, findOptions)
       .sort(options?.sort ? options?.sort : { _id: -1 })
       .toArray()
 
