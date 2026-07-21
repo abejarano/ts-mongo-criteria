@@ -23,21 +23,71 @@ describe("Criteria", () => {
       expect(criteria.order).toBeDefined()
       expect(criteria.limit).toBe(20)
       expect(criteria.currentPage).toBe(1)
-      expect(criteria.offset).toBe(0) // (1-1) * 20 = 0
+      expect(criteria.offset).toBe(0)
     })
 
-    it("should create criteria without pagination", () => {
+    it("should apply defaults when no pagination arguments are given", () => {
       const criteria = new Criteria(Filters.fromValues([]), Order.none())
 
-      expect(criteria.limit).toBeUndefined()
-      expect(criteria.currentPage).toBeUndefined()
-      expect(criteria.offset).toBeUndefined()
+      expect(criteria.limit).toBe(10)
+      expect(criteria.currentPage).toBe(1)
+      expect(criteria.offset).toBe(0)
+    })
+
+    it("should apply default page when only limit is given", () => {
+      const criteria = new Criteria(Filters.fromValues([]), Order.none(), 20)
+
+      expect(criteria.limit).toBe(20)
+      expect(criteria.currentPage).toBe(1)
+      expect(criteria.offset).toBe(0)
     })
 
     it("should calculate offset correctly for page 2", () => {
       const criteria = new Criteria(Filters.fromValues([]), Order.none(), 10, 2)
 
-      expect(criteria.offset).toBe(10) // (2-1) * 10 = 10
+      expect(criteria.offset).toBe(10)
+    })
+
+    it("should calculate offset for page 3 with limit 20", () => {
+      const criteria = new Criteria(Filters.fromValues([]), Order.none(), 20, 3)
+
+      expect(criteria.offset).toBe(40)
+    })
+
+    it("should reject limit equal to 0", () => {
+      expect(
+        () => new Criteria(Filters.fromValues([]), Order.none(), 0, 1)
+      ).toThrow("CRITERIA_LIMIT_MUST_BE_A_POSITIVE_INTEGER")
+    })
+
+    it("should reject negative limit", () => {
+      expect(
+        () => new Criteria(Filters.fromValues([]), Order.none(), -1, 1)
+      ).toThrow("CRITERIA_LIMIT_MUST_BE_A_POSITIVE_INTEGER")
+    })
+
+    it("should reject page equal to 0", () => {
+      expect(
+        () => new Criteria(Filters.fromValues([]), Order.none(), 10, 0)
+      ).toThrow("CRITERIA_PAGE_MUST_BE_A_POSITIVE_INTEGER")
+    })
+
+    it("should reject negative page", () => {
+      expect(
+        () => new Criteria(Filters.fromValues([]), Order.none(), 10, -1)
+      ).toThrow("CRITERIA_PAGE_MUST_BE_A_POSITIVE_INTEGER")
+    })
+
+    it("should reject non-integer limit", () => {
+      expect(
+        () => new Criteria(Filters.fromValues([]), Order.none(), 1.5, 1)
+      ).toThrow("CRITERIA_LIMIT_MUST_BE_A_POSITIVE_INTEGER")
+    })
+
+    it("should reject non-integer page", () => {
+      expect(
+        () => new Criteria(Filters.fromValues([]), Order.none(), 10, 1.5)
+      ).toThrow("CRITERIA_PAGE_MUST_BE_A_POSITIVE_INTEGER")
     })
   })
 

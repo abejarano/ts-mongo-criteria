@@ -8,18 +8,13 @@ export interface IRepository<T extends AggregateRoot> {
     filter: object,
     options?: {
       transaction?: MongoTransaction
-      fieldsToExclude?: string[]
       sort?: Order
     }
   ): Promise<T[]>
 
   one(filter: object, transaction?: MongoTransaction): Promise<T | null>
 
-  list(
-    criteria: Criteria,
-    fieldsToExclude?: string[],
-    transaction?: MongoTransaction
-  ): Promise<Paginate<T>>
+  list(criteria: Criteria, transaction?: MongoTransaction): Promise<Paginate<T>>
 
   upsert(entity: T, transaction?: MongoTransaction): Promise<void>
 

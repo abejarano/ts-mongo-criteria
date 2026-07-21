@@ -57,7 +57,6 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     filter: object,
     options?: {
       transaction?: MongoTransaction
-      fieldsToExclude?: string[]
       sort?: Order
     }
   ): Promise<T[]> {
@@ -74,8 +73,10 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       }
     }
 
+    const session = MongoTransaction.sessionFor(options?.transaction)
+
     const documents = await collection
-      .find(filter, this.buildFindOptions(options))
+      .find(filter, session ? { session } : undefined)
       .sort(order)
       .toArray()
 
@@ -121,16 +122,11 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   /** Lists entities by criteria and returns a paginated response. */
   public async list(
     criteria: Criteria,
-    fieldsToExclude: string[] = [],
     transaction?: MongoTransaction
   ): Promise<Paginate<T>> {
     const query = this.criteriaConverter.convert(criteria)
 
-    const documents = await this.searchByCriteria(
-      query,
-      fieldsToExclude,
-      transaction
-    )
+    const documents = await this.searchByCriteria(query, transaction)
     return this.paginate(documents, query, criteria, transaction)
   }
 
@@ -194,51 +190,16 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       .collection<U>(this.collectionName())
   }
 
-  private buildFindOptions(options?: {
-    transaction?: MongoTransaction
-    fieldsToExclude?: string[]
-  }) {
-    if (!options) {
-      return undefined
-    }
-
-    const session = options?.transaction
-      ? MongoTransaction.sessionFor(options?.transaction)
-      : undefined
-
-    const hasFields =
-      options?.fieldsToExclude && options.fieldsToExclude.length > 0
-
-    const projection: { [key: string]: 0 } | undefined = hasFields
-      ? {}
-      : undefined
-    if (hasFields) {
-      options!.fieldsToExclude!.forEach((field) => {
-        projection![field] = 0
-      })
-    }
-
-    return session
-      ? { ...(projection ? { projection } : {}), session }
-      : projection
-        ? { projection }
-        : undefined
-  }
-
   private async searchByCriteria(
     query: MongoQuery,
-    fieldsToExclude: string[] = [],
     transaction?: MongoTransaction
   ): Promise<T[]> {
     const collection = await this.collection()
 
-    const findOptions = this.buildFindOptions({
-      transaction,
-      fieldsToExclude,
-    })
+    const session = MongoTransaction.sessionFor(transaction)
 
     const results = await collection
-      .find(query.filter as any, findOptions)
+      .find(query.filter as any, session ? { session } : undefined)
       .sort(query.sort)
       .skip(query.skip)
       .limit(query.limit)
@@ -260,19 +221,21 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   ): Promise<Paginate<T>> {
     const collection = await this.collection()
     const session = MongoTransaction.sessionFor(transaction)
-    const count = session
-      ? await collection.countDocuments(query.filter as any, { session })
-      : await collection.countDocuments(query.filter as any)
 
-    const limit = criteria?.limit || 10
-    const currentPage = criteria?.currentPage || 1
+    const count = await collection.countDocuments(
+      query.filter as any,
+      session ? { session } : undefined
+    )
 
-    const hasNextPage: boolean = currentPage * limit < count
+    const limit = criteria.limit
+    const currentPage = criteria.currentPage
+
+    const hasNextPage: boolean = limit > 0 && currentPage * limit < count
 
     if (documents.length === 0) {
       return {
         nextPag: null,
-        count: 0,
+        count,
         results: [],
       }
     }

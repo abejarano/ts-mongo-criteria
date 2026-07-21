@@ -52,7 +52,25 @@ describe("MongoCriteriaConverter", () => {
       expect(mongoQuery.filter).toEqual({})
       expect(mongoQuery.sort).toEqual({ _id: -1 })
       expect(mongoQuery.skip).toBe(0)
-      expect(mongoQuery.limit).toBe(0)
+      expect(mongoQuery.limit).toBe(10)
+    })
+
+    it("should apply default limit and skip when criteria has no pagination", () => {
+      const criteria = new Criteria(Filters.fromValues([]), Order.none())
+
+      const mongoQuery = converter.convert(criteria)
+
+      expect(mongoQuery.limit).toBe(10)
+      expect(mongoQuery.skip).toBe(0)
+    })
+
+    it("should calculate skip for page 3", () => {
+      const criteria = new Criteria(Filters.fromValues([]), Order.none(), 10, 3)
+
+      const mongoQuery = converter.convert(criteria)
+
+      expect(mongoQuery.limit).toBe(10)
+      expect(mongoQuery.skip).toBe(20)
     })
 
     it("should handle multiple filters", () => {
