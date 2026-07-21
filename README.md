@@ -6,7 +6,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-30%2F30%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-46%2F46%20passing-brightgreen.svg)](#testing)
 
 > A robust, type-safe implementation of the **Criteria Pattern** for MongoDB queries in TypeScript. Build complex database queries dynamically with a fluent, composable API designed following Domain-Driven Design (DDD) and Clean Architecture principles.
 
@@ -182,7 +182,7 @@ Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 MongoRepository provides ready-to-use public methods for repositories that extend it:
 
 - `list(criteria, fieldsToExclude?)` for paginated queries
-- `many(filter, transaction?)` to fetch multiple entities matching a filter
+- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort }`
 - `one(filter, transaction?)` to fetch a single entity
 - `upsert(entity, transaction?)` to persist an aggregate
   Internal helpers are private, so repositories should call these public methods
@@ -199,8 +199,8 @@ export interface IUserRepository extends IRepository<User> {
 }
 ```
 
-The goal of `IRepository` is to prevent signature drift (e.g. `upsert` returning
-`void` in your app while the base repository returns `ObjectId | null`).
+The goal of `IRepository` is to prevent signature drift between your app's
+interfaces and the library's repository return types.
 
 ## Atomic Transactions
 
@@ -218,7 +218,10 @@ await MongoTransaction.run(async (tx) => {
 
   // Reads can observe writes made earlier in this transaction.
   const persistedUser = await userRepository.one({ id: user.getId() }, tx)
-  const activeUsers = await userRepository.many({ status: "active" }, tx)
+  const activeUsers = await userRepository.many(
+    { status: "active" },
+    { transaction: tx, sort: { name: 1 } }
+  )
 })
 ```
 
@@ -237,8 +240,8 @@ async deactivateUser(id: string, tx: MongoTransaction): Promise<void> {
 
 MongoDB transactions require a replica set or a sharded cluster; standalone
 MongoDB instances do not support them. This initial API applies the transaction
-context to `upsert`, `delete`, protected `updateOne`, `one`, and `list`.
-Pass `tx` as the third argument to `list` after `fieldsToExclude`, and as the second argument to `many`.
+context to `upsert`, `delete`, protected `updateOne`, `one`, `list`, and `many`.
+Pass `tx` as the third argument to `list` after `fieldsToExclude`, and inside the options object (`{ transaction: tx }`) to `many`.
 
 **Your First Query in 30 Seconds:**
 
@@ -385,7 +388,7 @@ const criteria = new Criteria(Filters.fromValues(filters), Order.none())
 
 ## 🧪 Testing
 
-The library includes comprehensive test coverage (30/30 tests passing).
+The library includes comprehensive test coverage (46/46 tests passing).
 
 ```bash
 # Run all tests

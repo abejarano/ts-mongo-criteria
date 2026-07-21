@@ -9,28 +9,24 @@ import { AggregateRoot } from "../src/AggregateRoot"
 // Mock de AggregateRoot para tests
 class TestEntity extends AggregateRoot {
   constructor(
-    private id: string,
+    id: string,
     private name: string,
     private email: string,
     private status: string
   ) {
-    super()
-  }
-
-  getId(): string {
-    return this.id
+    super(id)
   }
 
   toPrimitives(): any {
     return {
-      id: this.id,
+      id: this.getId(),
       name: this.name,
       email: this.email,
       status: this.status,
     }
   }
 
-  static override fromPrimitives(data: any): TestEntity {
+  static fromPrimitives(data: any): TestEntity {
     return new TestEntity(data.id, data.name, data.email, data.status)
   }
 }
@@ -340,7 +336,11 @@ describe("MongoRepository", () => {
   })
 
   describe("many", () => {
-    it("should return hydrated entities matching the filter", async () => {
+    beforeEach(() => {
+      mockCollection.sort = jest.fn().mockReturnThis()
+    })
+
+    it("should return hydrated entities matching the filter with default sort", async () => {
       const mockResults = [
         {
           _id: "507f1f77bcf86cd799439011",
@@ -380,6 +380,7 @@ describe("MongoRepository", () => {
         { status: "active" },
         undefined
       )
+      expect(mockCollection.sort).toHaveBeenCalledWith({ _id: -1 })
     })
 
     it("should return an empty array when no documents match", async () => {
@@ -392,6 +393,18 @@ describe("MongoRepository", () => {
         { status: "nonexistent" },
         undefined
       )
+      expect(mockCollection.sort).toHaveBeenCalledWith({ _id: -1 })
+    })
+
+    it("should apply custom sort when provided", async () => {
+      mockCollection.toArray.mockResolvedValue([])
+
+      await repository.many(
+        { status: "active" },
+        { sort: { name: 1 } }
+      )
+
+      expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
     })
 
     it("should pass the session to find when a transaction is provided", async () => {
@@ -408,13 +421,69 @@ describe("MongoRepository", () => {
       mockCollection.toArray.mockResolvedValue([])
 
       await MongoTransaction.run(async (transaction) => {
-        await repository.many({ status: "active" }, transaction)
+        await repository.many(
+          { status: "active" },
+          { transaction, sort: { name: 1 } }
+        )
       })
 
       expect(mockCollection.find).toHaveBeenCalledWith(
         { status: "active" },
         { session }
       )
+      expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
+    })
+  })
+
+  describe("upsert", () => {
+    it("should assign a new id when entity has no id", async () => {
+      mockCollection.updateOne = jest.fn()
+      const entityWithoutId = new TestEntity(
+        undefined as any,
+        "NoID",
+        "noid@test.com",
+        "pending"
+      )
+
+      await repository.upsert(entityWithoutId)
+
+      expect(mockCollection.updateOne).toHaveBeenCalledTimes(1)
+      expect(entityWithoutId.getId()).toBeDefined()
+    })
+
+    it("should keep the existing id when entity has one", async () => {
+      mockCollection.updateOne = jest.fn()
+      const entity = new TestEntity(
+        "507f1f77bcf86cd799439011",
+        "John",
+        "john@test.com",
+        "active"
+      )
+
+      await repository.upsert(entity)
+
+      expect(mockCollection.updateOne).toHaveBeenCalledTimes(1)
+      expect(entity.getId()).toBe("507f1f77bcf86cd799439011")
+    })
+
+    it("should pass primitives in $set with id from entity", async () => {
+      mockCollection.updateOne = jest.fn()
+      const entity = new TestEntity(
+        "507f1f77bcf86cd799439011",
+        "John",
+        "john@test.com",
+        "active"
+      )
+
+      await repository.upsert(entity)
+
+      const updateArg = mockCollection.updateOne.mock.calls[0][1]
+      expect(updateArg.$set).toEqual({
+        id: "507f1f77bcf86cd799439011",
+        name: "John",
+        email: "john@test.com",
+        status: "active",
+      })
     })
   })
 

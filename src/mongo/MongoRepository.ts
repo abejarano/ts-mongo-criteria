@@ -10,6 +10,7 @@ import {
   ObjectId,
   UpdateFilter,
 } from "mongodb"
+import { MongoSort } from "../types"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
   private static indexRegistry = new Set<string>()
@@ -48,12 +49,34 @@ export abstract class MongoRepository<T extends AggregateRoot> {
 
   public async many(
     filter: object,
-    transaction?: MongoTransaction
+    options?: {
+      transaction?: MongoTransaction
+      fields?: string[]
+      sort?: MongoSort
+    }
   ): Promise<T[]> {
     const collection = await this.collection<Document>()
-    const session = MongoTransaction.sessionFor(transaction)
+    const session = options?.transaction
+      ? MongoTransaction.sessionFor(options?.transaction)
+      : undefined
+
+    const hasFields = options?.fields && options.fields.length > 0
+    const projection: { [key: string]: 1 } | undefined = hasFields ? {} : undefined
+    if (hasFields) {
+      options!.fields!.forEach((field) => {
+        projection![field] = 1
+      })
+    }
+
+    const findOptions = session
+      ? { ...(projection ? { projection } : {}), session }
+      : projection
+        ? { projection }
+        : undefined
+
     const documents = await collection
-      .find(filter, session === undefined ? undefined : { session })
+      .find(filter, findOptions)
+      .sort(options?.sort ? options?.sort : { _id: -1 })
       .toArray()
 
     return documents.map((document) =>
@@ -69,7 +92,27 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     entity: T,
     transaction?: MongoTransaction
   ): Promise<void> {
-    await this.persist(entity.getId()!, entity, transaction)
+    const primitiveResult = entity.toPrimitives()
+    const primitives = await Promise.resolve(primitiveResult)
+
+    const currentId = entity.getId()
+
+    const mongoId =
+      currentId === undefined ? new ObjectId() : new ObjectId(currentId)
+
+    if (currentId === undefined) {
+      entity.assignId(mongoId.toString())
+    }
+
+    await this.updateOne(
+      { _id: mongoId },
+      {
+        $set: {
+          ...primitives,
+        },
+      },
+      transaction
+    )
   }
 
   /** Lists entities by criteria and returns a paginated response. */
@@ -143,31 +186,6 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     return (await MongoClientFactory.createClient())
       .db()
       .collection<U>(this.collectionName())
-  }
-
-  private async persist(
-    id: string,
-    aggregateRoot: T,
-    transaction?: MongoTransaction
-  ): Promise<void> {
-    let primitives: any
-
-    if (aggregateRoot.toPrimitives() instanceof Promise) {
-      primitives = await aggregateRoot.toPrimitives()
-    } else {
-      primitives = aggregateRoot.toPrimitives()
-    }
-
-    await this.updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          ...primitives,
-          id: id,
-        },
-      },
-      transaction
-    )
   }
 
   private async searchByCriteria<D>(
