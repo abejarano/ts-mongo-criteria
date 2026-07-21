@@ -26,7 +26,7 @@ class TestEntity extends AggregateRoot {
     }
   }
 
-  static override fromPrimitives(data: any): TestEntity {
+  static fromPrimitives(data: any): TestEntity {
     return new TestEntity(data.id, data.name, data.email, data.status)
   }
 }
@@ -432,6 +432,58 @@ describe("MongoRepository", () => {
         { session }
       )
       expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
+    })
+  })
+
+  describe("upsert", () => {
+    it("should assign a new id when entity has no id", async () => {
+      mockCollection.updateOne = jest.fn()
+      const entityWithoutId = new TestEntity(
+        undefined as any,
+        "NoID",
+        "noid@test.com",
+        "pending"
+      )
+
+      await repository.upsert(entityWithoutId)
+
+      expect(mockCollection.updateOne).toHaveBeenCalledTimes(1)
+      expect(entityWithoutId.getId()).toBeDefined()
+    })
+
+    it("should keep the existing id when entity has one", async () => {
+      mockCollection.updateOne = jest.fn()
+      const entity = new TestEntity(
+        "507f1f77bcf86cd799439011",
+        "John",
+        "john@test.com",
+        "active"
+      )
+
+      await repository.upsert(entity)
+
+      expect(mockCollection.updateOne).toHaveBeenCalledTimes(1)
+      expect(entity.getId()).toBe("507f1f77bcf86cd799439011")
+    })
+
+    it("should pass primitives in $set with id from entity", async () => {
+      mockCollection.updateOne = jest.fn()
+      const entity = new TestEntity(
+        "507f1f77bcf86cd799439011",
+        "John",
+        "john@test.com",
+        "active"
+      )
+
+      await repository.upsert(entity)
+
+      const updateArg = mockCollection.updateOne.mock.calls[0][1]
+      expect(updateArg.$set).toEqual({
+        id: "507f1f77bcf86cd799439011",
+        name: "John",
+        email: "john@test.com",
+        status: "active",
+      })
     })
   })
 

@@ -5,10 +5,6 @@ export abstract class AggregateRoot {
     this.aggregateId = id
   }
 
-  static fromPrimitives(_data: any): AggregateRoot {
-    throw new Error("fromPrimitives must be implemented in subclasses")
-  }
-
   getId(): string | undefined {
     return this.aggregateId
   }
@@ -25,5 +21,5 @@ export abstract class AggregateRoot {
 }
 
 export type AggregateRootClass<T extends AggregateRoot> = {
-  fromPrimitives(data: any): T
+  fromPrimitives(data: Record<string, unknown> & { readonly id: string }): T
 }

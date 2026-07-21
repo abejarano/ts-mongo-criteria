@@ -78,31 +78,25 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     entity: T,
     transaction?: MongoTransaction
   ): Promise<void> {
-    let primitives: any
+    const primitiveResult = entity.toPrimitives()
+    const primitives = await Promise.resolve(primitiveResult)
 
-    if (entity.toPrimitives() instanceof Promise) {
-      primitives = await entity.toPrimitives()
-    } else {
-      primitives = entity.toPrimitives()
-    }
+    const currentId = entity.getId()
 
     const mongoId =
-      entity.getId() === undefined
-        ? new ObjectId()
-        : new ObjectId(entity.getId())
+      currentId === undefined ? new ObjectId() : new ObjectId(currentId)
 
     await this.updateOne(
       { _id: mongoId },
       {
         $set: {
           ...primitives,
-          id: mongoId.toString(),
         },
       },
       transaction
     )
 
-    if (entity.getId() === undefined) {
+    if (currentId === undefined) {
       entity.assignId(mongoId.toString())
     }
   }
