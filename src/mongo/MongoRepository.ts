@@ -74,8 +74,37 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   /** Upserts an aggregate by delegating to persist with its id. */
-  public async upsert(entity: T, transaction?: MongoTransaction): Promise<T> {
-    return await this.persist(entity.getId()!, entity, transaction)
+  public async upsert(
+    entity: T,
+    transaction?: MongoTransaction
+  ): Promise<void> {
+    let primitives: any
+
+    if (entity.toPrimitives() instanceof Promise) {
+      primitives = await entity.toPrimitives()
+    } else {
+      primitives = entity.toPrimitives()
+    }
+
+    const mongoId =
+      entity.getId() === undefined
+        ? new ObjectId()
+        : new ObjectId(entity.getId())
+
+    await this.updateOne(
+      { _id: mongoId },
+      {
+        $set: {
+          ...primitives,
+          id: mongoId.toString(),
+        },
+      },
+      transaction
+    )
+
+    if (entity.getId() === undefined) {
+      entity.assignId(mongoId.toString())
+    }
   }
 
   /** Lists entities by criteria and returns a paginated response. */
@@ -149,38 +178,6 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     return (await MongoClientFactory.createClient())
       .db()
       .collection<U>(this.collectionName())
-  }
-
-  private async persist(
-    id: string,
-    aggregateRoot: T,
-    transaction?: MongoTransaction
-  ): Promise<T> {
-    let primitives: any
-
-    if (aggregateRoot.toPrimitives() instanceof Promise) {
-      primitives = await aggregateRoot.toPrimitives()
-    } else {
-      primitives = aggregateRoot.toPrimitives()
-    }
-
-    const mongoId = new ObjectId(id)
-
-    await this.updateOne(
-      { _id: mongoId },
-      {
-        $set: {
-          ...primitives,
-          id: mongoId.toString(),
-        },
-      },
-      transaction
-    )
-
-    return this.aggregateRootClass.fromPrimitives({
-      ...primitives,
-      id: mongoId.toString(),
-    })
   }
 
   private async searchByCriteria<D>(

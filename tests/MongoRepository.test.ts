@@ -9,21 +9,17 @@ import { AggregateRoot } from "../src/AggregateRoot"
 // Mock de AggregateRoot para tests
 class TestEntity extends AggregateRoot {
   constructor(
-    private id: string,
+    id: string,
     private name: string,
     private email: string,
     private status: string
   ) {
-    super()
-  }
-
-  getId(): string {
-    return this.id
+    super(id)
   }
 
   toPrimitives(): any {
     return {
-      id: this.id,
+      id: this.getId(),
       name: this.name,
       email: this.email,
       status: this.status,

@@ -1,9 +1,25 @@
 export abstract class AggregateRoot {
+  private aggregateId?: string
+
+  protected constructor(id?: string) {
+    this.aggregateId = id
+  }
+
   static fromPrimitives(_data: any): AggregateRoot {
     throw new Error("fromPrimitives must be implemented in subclasses")
   }
 
-  abstract getId(): string | undefined
+  getId(): string | undefined {
+    return this.aggregateId
+  }
+
+  assignId(mongoId: string): void {
+    if (this.aggregateId !== undefined) {
+      throw new Error("AGGREGATE_ID_ALREADY_ASSIGNED")
+    }
+
+    this.aggregateId = mongoId
+  }
 
   abstract toPrimitives(): any
 }
