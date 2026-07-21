@@ -401,7 +401,7 @@ describe("MongoRepository", () => {
 
       await repository.many(
         { status: "active" },
-        { sort: { name: 1 } }
+        { sort: Order.asc("name") }
       )
 
       expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
@@ -423,7 +423,7 @@ describe("MongoRepository", () => {
       await MongoTransaction.run(async (transaction) => {
         await repository.many(
           { status: "active" },
-          { transaction, sort: { name: 1 } }
+          { transaction, sort: Order.asc("name") }
         )
       })
 

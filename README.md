@@ -182,7 +182,7 @@ Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 MongoRepository provides ready-to-use public methods for repositories that extend it:
 
 - `list(criteria, fieldsToExclude?)` for paginated queries
-- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort }`
+- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, fieldsToExclude?, sort? }`
 - `one(filter, transaction?)` to fetch a single entity
 - `upsert(entity, transaction?)` to persist an aggregate
   Internal helpers are private, so repositories should call these public methods
@@ -220,7 +220,7 @@ await MongoTransaction.run(async (tx) => {
   const persistedUser = await userRepository.one({ id: user.getId() }, tx)
   const activeUsers = await userRepository.many(
     { status: "active" },
-    { transaction: tx, sort: { name: 1 } }
+    { transaction: tx, sort: Order.asc("name") }
   )
 })
 ```
