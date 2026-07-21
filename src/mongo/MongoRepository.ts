@@ -15,8 +15,6 @@ import { MongoSort } from "../types"
 export abstract class MongoRepository<T extends AggregateRoot> {
   private static indexRegistry = new Set<string>()
   private criteriaConverter: MongoCriteriaConverter
-  private query!: MongoQuery
-  private criteria!: Criteria
 
   protected constructor(
     private readonly aggregateRootClass: AggregateRootClass<T>
@@ -126,12 +124,14 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     fieldsToExclude: string[] = [],
     transaction?: MongoTransaction
   ): Promise<Paginate<T>> {
+    const query = this.criteriaConverter.convert(criteria)
+
     const documents = await this.searchByCriteria(
-      criteria,
+      query,
       fieldsToExclude,
       transaction
     )
-    return this.paginate(documents, transaction)
+    return this.paginate(documents, query, criteria, transaction)
   }
 
   /**
@@ -226,13 +226,10 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   private async searchByCriteria(
-    criteria: Criteria,
+    query: MongoQuery,
     fieldsToExclude: string[] = [],
     transaction?: MongoTransaction
   ): Promise<T[]> {
-    this.criteria = criteria
-    this.query = this.criteriaConverter.convert(criteria)
-
     const collection = await this.collection()
 
     const findOptions = this.buildFindOptions({
@@ -241,10 +238,10 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     })
 
     const results = await collection
-      .find(this.query.filter as any, findOptions)
-      .sort(this.query.sort)
-      .skip(this.query.skip)
-      .limit(this.query.limit)
+      .find(query.filter as any, findOptions)
+      .sort(query.sort)
+      .skip(query.skip)
+      .limit(query.limit)
       .toArray()
 
     return results.map(({ _id, ...rest }) => {
@@ -257,16 +254,18 @@ export abstract class MongoRepository<T extends AggregateRoot> {
 
   private async paginate(
     documents: T[],
+    query: MongoQuery,
+    criteria: Criteria,
     transaction?: MongoTransaction
   ): Promise<Paginate<T>> {
     const collection = await this.collection()
     const session = MongoTransaction.sessionFor(transaction)
     const count = session
-      ? await collection.countDocuments(this.query.filter as any, { session })
-      : await collection.countDocuments(this.query.filter as any)
+      ? await collection.countDocuments(query.filter as any, { session })
+      : await collection.countDocuments(query.filter as any)
 
-    const limit = this.criteria?.limit || 10
-    const currentPage = this.criteria?.currentPage || 1
+    const limit = criteria?.limit || 10
+    const currentPage = criteria?.currentPage || 1
 
     const hasNextPage: boolean = currentPage * limit < count
 
@@ -279,7 +278,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     }
 
     return {
-      nextPag: hasNextPage ? Number(this.criteria.currentPage) + 1 : null,
+      nextPag: hasNextPage ? Number(criteria.currentPage) + 1 : null,
       count: count,
       results: documents,
     }

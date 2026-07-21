@@ -15,7 +15,7 @@ export interface IRepository<T extends AggregateRoot> {
 
   one(filter: object, transaction?: MongoTransaction): Promise<T | null>
 
-  list<T>(
+  list(
     criteria: Criteria,
     fieldsToExclude?: string[],
     transaction?: MongoTransaction
