@@ -1,8 +1,7 @@
-import { Criteria, Paginate } from "../criteria"
+import { Criteria, Order, Paginate } from "../criteria"
 import { AggregateRoot } from "../AggregateRoot"
 import { DeleteOptions } from "mongodb"
 import { MongoTransaction } from "./MongoTransaction"
-import { Order } from "../criteria"
 
 export interface IRepository<T extends AggregateRoot> {
   many(
@@ -16,11 +15,11 @@ export interface IRepository<T extends AggregateRoot> {
 
   one(filter: object, transaction?: MongoTransaction): Promise<T | null>
 
-  list<D>(
+  list<T>(
     criteria: Criteria,
     fieldsToExclude?: string[],
     transaction?: MongoTransaction
-  ): Promise<Paginate<D>>
+  ): Promise<Paginate<T>>
 
   upsert(entity: T, transaction?: MongoTransaction): Promise<void>
 

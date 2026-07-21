@@ -41,10 +41,13 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       return null
     }
 
-    return this.aggregateRootClass.fromPrimitives({
-      ...result,
-      id: result._id.toString(),
-    })
+    const { _id, ...primitives } = result
+
+    const entity = this.aggregateRootClass.fromPrimitives(primitives)
+
+    entity.assignId(_id.toString())
+
+    return entity
   }
 
   /**
@@ -61,26 +64,6 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     }
   ): Promise<T[]> {
     const collection = await this.collection<Document>()
-    const session = options?.transaction
-      ? MongoTransaction.sessionFor(options?.transaction)
-      : undefined
-
-    const hasFields =
-      options?.fieldsToExclude && options.fieldsToExclude.length > 0
-    const projection: { [key: string]: 0 } | undefined = hasFields
-      ? {}
-      : undefined
-    if (hasFields) {
-      options!.fieldsToExclude!.forEach((field) => {
-        projection![field] = 0
-      })
-    }
-
-    const findOptions = session
-      ? { ...(projection ? { projection } : {}), session }
-      : projection
-        ? { projection }
-        : undefined
 
     let order: MongoSort = { _id: -1 }
     if (options?.sort?.hasOrder()) {
@@ -94,16 +77,19 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     }
 
     const documents = await collection
-      .find(filter, findOptions)
+      .find(filter, this.buildFindOptions(options))
       .sort(order)
       .toArray()
 
-    return documents.map((document) =>
-      this.aggregateRootClass.fromPrimitives({
-        ...document,
-        id: document._id.toString(),
-      })
-    )
+    return documents.map((document) => {
+      const { _id, ...primitives } = document
+
+      const entity = this.aggregateRootClass.fromPrimitives(primitives)
+
+      entity.assignId(_id.toString())
+
+      return entity
+    })
   }
 
   /** Upserts an aggregate by delegating to persist with its id. */
@@ -135,17 +121,17 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   /** Lists entities by criteria and returns a paginated response. */
-  public async list<D>(
+  public async list(
     criteria: Criteria,
     fieldsToExclude: string[] = [],
     transaction?: MongoTransaction
-  ): Promise<Paginate<D>> {
-    const documents = await this.searchByCriteria<D>(
+  ): Promise<Paginate<T>> {
+    const documents = await this.searchByCriteria(
       criteria,
       fieldsToExclude,
       transaction
     )
-    return this.paginate<D>(documents, transaction)
+    return this.paginate(documents, transaction)
   }
 
   /**
@@ -208,47 +194,68 @@ export abstract class MongoRepository<T extends AggregateRoot> {
       .collection<U>(this.collectionName())
   }
 
-  private async searchByCriteria<D>(
+  private buildFindOptions(options?: {
+    transaction?: MongoTransaction
+    fieldsToExclude?: string[]
+  }) {
+    if (!options) {
+      return undefined
+    }
+
+    const session = options?.transaction
+      ? MongoTransaction.sessionFor(options?.transaction)
+      : undefined
+
+    const hasFields =
+      options?.fieldsToExclude && options.fieldsToExclude.length > 0
+
+    const projection: { [key: string]: 0 } | undefined = hasFields
+      ? {}
+      : undefined
+    if (hasFields) {
+      options!.fieldsToExclude!.forEach((field) => {
+        projection![field] = 0
+      })
+    }
+
+    return session
+      ? { ...(projection ? { projection } : {}), session }
+      : projection
+        ? { projection }
+        : undefined
+  }
+
+  private async searchByCriteria(
     criteria: Criteria,
     fieldsToExclude: string[] = [],
     transaction?: MongoTransaction
-  ): Promise<D[]> {
+  ): Promise<T[]> {
     this.criteria = criteria
     this.query = this.criteriaConverter.convert(criteria)
 
     const collection = await this.collection()
-    const session = MongoTransaction.sessionFor(transaction)
 
-    if (fieldsToExclude.length === 0) {
-      const results = await collection
-        .find(this.query.filter as any, session ? { session } : {})
-        .sort(this.query.sort)
-        .skip(this.query.skip)
-        .limit(this.query.limit)
-        .toArray()
-
-      return results.map(({ _id, ...rest }) => rest as D)
-    }
-
-    const projection: { [key: string]: 0 } = {}
-    fieldsToExclude.forEach((field) => {
-      projection[field] = 0
+    const findOptions = this.buildFindOptions({
+      transaction,
+      fieldsToExclude,
     })
 
     const results = await collection
-      .find(
-        this.query.filter as any,
-        session ? { projection, session } : { projection }
-      )
+      .find(this.query.filter as any, findOptions)
       .sort(this.query.sort)
       .skip(this.query.skip)
       .limit(this.query.limit)
       .toArray()
 
-    return results.map(({ _id, ...rest }) => rest as D)
+    return results.map(({ _id, ...rest }) => {
+      const entity = this.aggregateRootClass.fromPrimitives(rest)
+      entity.assignId(_id.toString())
+
+      return entity
+    })
   }
 
-  private async paginate<T>(
+  private async paginate(
     documents: T[],
     transaction?: MongoTransaction
   ): Promise<Paginate<T>> {

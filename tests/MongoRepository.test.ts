@@ -9,12 +9,11 @@ import { AggregateRoot } from "../src/AggregateRoot"
 // Mock de AggregateRoot para tests
 class TestEntity extends AggregateRoot {
   constructor(
-    id: string,
     private name: string,
     private email: string,
     private status: string
   ) {
-    super(id)
+    super()
   }
 
   toPrimitives(): any {
@@ -27,7 +26,7 @@ class TestEntity extends AggregateRoot {
   }
 
   static fromPrimitives(data: any): TestEntity {
-    return new TestEntity(data.id, data.name, data.email, data.status)
+    return new TestEntity(data.name, data.email, data.status)
   }
 }
 
@@ -117,11 +116,6 @@ describe("MongoRepository", () => {
         },
       ]
 
-      const expectedResults = [
-        { id: "1", name: "John", email: "john@test.com", status: "active" },
-        { id: "2", name: "Jane", email: "jane@test.com", status: "active" },
-      ]
-
       mockCollection.toArray.mockResolvedValue(mockResults)
       mockCollection.countDocuments.mockResolvedValue(2)
 
@@ -144,14 +138,26 @@ describe("MongoRepository", () => {
       const result = await repository.list(criteria)
 
       // Assert
-      expect(result).toEqual({
-        nextPag: null,
-        count: 2,
-        results: expectedResults,
+      expect(result.count).toBe(2)
+      expect(result.nextPag).toBeNull()
+      expect(result.results).toHaveLength(2)
+      expect(result.results[0]).toBeInstanceOf(TestEntity)
+      expect(result.results[1]).toBeInstanceOf(TestEntity)
+      expect(result.results[0].toPrimitives()).toEqual({
+        id: "objectId1",
+        name: "John",
+        email: "john@test.com",
+        status: "active",
+      })
+      expect(result.results[1].toPrimitives()).toEqual({
+        id: "objectId2",
+        name: "Jane",
+        email: "jane@test.com",
+        status: "active",
       })
       expect(mockCollection.find).toHaveBeenCalledWith(
         { status: { $eq: "active" } },
-        {}
+        undefined
       )
       expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
       expect(mockCollection.skip).toHaveBeenCalledWith(0)
@@ -166,11 +172,6 @@ describe("MongoRepository", () => {
       const mockResults = [
         { _id: "objectId1", id: "1", name: "John", status: "active" },
         { _id: "objectId2", id: "2", name: "Jane", status: "active" },
-      ]
-
-      const expectedResults = [
-        { id: "1", name: "John", status: "active" },
-        { id: "2", name: "Jane", status: "active" },
       ]
 
       mockCollection.toArray.mockResolvedValue(mockResults)
@@ -197,10 +198,22 @@ describe("MongoRepository", () => {
       const result = await repository.list(criteria, fieldsToExclude)
 
       // Assert
-      expect(result).toEqual({
-        nextPag: null,
-        count: 2,
-        results: expectedResults,
+      expect(result.count).toBe(2)
+      expect(result.nextPag).toBeNull()
+      expect(result.results).toHaveLength(2)
+      expect(result.results[0]).toBeInstanceOf(TestEntity)
+      expect(result.results[1]).toBeInstanceOf(TestEntity)
+      expect(result.results[0].toPrimitives()).toEqual({
+        id: "objectId1",
+        name: "John",
+        email: undefined,
+        status: "active",
+      })
+      expect(result.results[1].toPrimitives()).toEqual({
+        id: "objectId2",
+        name: "Jane",
+        email: undefined,
+        status: "active",
       })
       expect(mockCollection.find).toHaveBeenCalledWith(
         { status: { $eq: "active" } },
@@ -224,10 +237,6 @@ describe("MongoRepository", () => {
           email: "bob@test.com",
           status: "active",
         },
-      ]
-
-      const expectedResults = [
-        { id: "3", name: "Bob", email: "bob@test.com", status: "active" },
       ]
 
       mockCollection.toArray.mockResolvedValue(mockResults)
@@ -257,17 +266,22 @@ describe("MongoRepository", () => {
       const result = await repository.list(criteria)
 
       // Assert
-      expect(result).toEqual({
-        nextPag: 3,
-        count: 12,
-        results: expectedResults,
+      expect(result.count).toBe(12)
+      expect(result.nextPag).toBe(3)
+      expect(result.results).toHaveLength(1)
+      expect(result.results[0]).toBeInstanceOf(TestEntity)
+      expect(result.results[0].toPrimitives()).toEqual({
+        id: "objectId3",
+        name: "Bob",
+        email: "bob@test.com",
+        status: "active",
       })
       expect(mockCollection.find).toHaveBeenCalledWith(
         {
           status: { $eq: "active" },
           name: { $regex: "Bo" },
         },
-        {}
+        undefined
       )
       expect(mockCollection.sort).toHaveBeenCalledWith({ createdAt: -1 })
       expect(mockCollection.skip).toHaveBeenCalledWith(5) // (page 2 - 1) * limit 5
@@ -319,8 +333,6 @@ describe("MongoRepository", () => {
         { _id: "shouldBeRemoved", id: "1", name: "Test", data: "value" },
       ]
 
-      const expectedResults = [{ id: "1", name: "Test", data: "value" }]
-
       mockCollection.toArray.mockResolvedValue(mockResults)
       mockCollection.countDocuments.mockResolvedValue(1)
 
@@ -330,8 +342,10 @@ describe("MongoRepository", () => {
       const result = await repository.list(criteria)
 
       // Assert
-      expect(result.results).toEqual(expectedResults)
-      expect(result.results[0]).not.toHaveProperty("_id")
+      expect(result.results[0]).toBeInstanceOf(TestEntity)
+      const primitives = result.results[0].toPrimitives()
+      expect(primitives).not.toHaveProperty("_id")
+      expect(primitives.id).toBe("shouldBeRemoved")
     })
   })
 
@@ -439,7 +453,6 @@ describe("MongoRepository", () => {
     it("should assign a new id when entity has no id", async () => {
       mockCollection.updateOne = jest.fn()
       const entityWithoutId = new TestEntity(
-        undefined as any,
         "NoID",
         "noid@test.com",
         "pending"
@@ -454,11 +467,11 @@ describe("MongoRepository", () => {
     it("should keep the existing id when entity has one", async () => {
       mockCollection.updateOne = jest.fn()
       const entity = new TestEntity(
-        "507f1f77bcf86cd799439011",
         "John",
         "john@test.com",
         "active"
       )
+      entity.assignId("507f1f77bcf86cd799439011")
 
       await repository.upsert(entity)
 
@@ -469,11 +482,11 @@ describe("MongoRepository", () => {
     it("should pass primitives in $set with id from entity", async () => {
       mockCollection.updateOne = jest.fn()
       const entity = new TestEntity(
-        "507f1f77bcf86cd799439011",
         "John",
         "john@test.com",
         "active"
       )
+      entity.assignId("507f1f77bcf86cd799439011")
 
       await repository.upsert(entity)
 
@@ -489,7 +502,6 @@ describe("MongoRepository", () => {
 
   describe("transactions", () => {
     const entity = new TestEntity(
-      "507f1f77bcf86cd799439011",
       "John",
       "john@test.com",
       "active"

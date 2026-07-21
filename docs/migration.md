@@ -516,7 +516,7 @@ class ProductRepository extends MongoRepository<Product> {
   }
 
   async findPopularProducts(criteria: Criteria): Promise<Product[]> {
-    return (await this.list<Product>(criteria)).results
+    return (await this.list(criteria)).results
   }
 }
 ```

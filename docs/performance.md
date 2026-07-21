@@ -651,7 +651,7 @@ class PerformanceMonitoringRepository<
     const queryFingerprint = this.generateQueryFingerprint(criteria)
 
     try {
-      const results = await this.list<T>(
+      const results = await this.list(
         criteria,
         fieldsToExclude ? fieldsToExclude : []
       )
