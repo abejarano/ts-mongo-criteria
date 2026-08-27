@@ -1347,4 +1347,25 @@ class MigrationStateValidator {
 }
 ```
 
+## 2.0.0 Breaking Changes — Reference Relations
+
+This version introduces a breaking redesign of reference relations (`feat/reference-relations` / PR #12):
+
+- `MongoRelation` interface removed; relations declared via `AggregateRoot.relations()` (static).
+- `MongoRepository.collectionName()` and `MongoRepository.relations()` removed; moved to aggregate.
+- Read methods (`one`, `many`, `list`) now take `MongoReadOptions` with `relations?: AggregateRelationSelection[]`; relations are **explicit**, not automatic.
+- Relation store is `_id` (ObjectId), not a business-id string (`id`, `code`).
+- `fields` projection inside `$lookup` supported (MongoDB 5.0+ for concise form; simple form on 3.6+).
+- `upsert` writes references automatically via `resolveReferences()`.
+- Nuevo: relaciones **inversas** (`{ entity, inverseOf }` para ONE_TO_ONE inverso y `{ entity, inverseOf, many: true }` para ONE_TO_MANY). Requieren índice sobre el campo `inverseOf` en la colección destino y, para el 1:1 real, índice único. Se seleccionan con `name` cuando la misma clase está declarada más de una vez.
+
+Migration steps for repositories using relations:
+
+1. Move `collectionName()` from repository to `AggregateRoot.collectionName()`.
+2. Replace `relations(): MongoRelations` with `static relations(): AggregateRelations = { ... }` using aggregate classes (e.g., `{ customer: CustomerAggregateRoot }`).
+3. Update queries to pass `relations: [{ entity: CustomerAggregateRoot, fields?: [...] }]` when needed.
+4. Migrate stored references to `ObjectId` if they were strings or business ids.
+
+See [`docs/reference-relations.md`](./reference-relations.md) for full examples.
+
 By following this migration guide, you can safely and systematically transition from your existing query patterns to the MongoDB Criteria pattern, ensuring improved type safety, maintainability, and consistency across your application.
