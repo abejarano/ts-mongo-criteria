@@ -25,6 +25,14 @@ class TestEntity extends AggregateRoot {
     }
   }
 
+  static collectionName(): string {
+    return "test_collection"
+  }
+
+  static relations(): Record<string, any> {
+    return {}
+  }
+
   static fromPrimitives(data: any): TestEntity {
     return new TestEntity(data.name, data.email, data.status)
   }
@@ -62,10 +70,6 @@ import { MongoTransaction } from "../src/mongo/MongoTransaction"
 class TestRepository extends MongoRepository<TestEntity> {
   constructor() {
     super(TestEntity)
-  }
-
-  collectionName(): string {
-    return "test_collection"
   }
 
   protected async ensureIndexes(_collection: any): Promise<void> {
@@ -306,12 +310,7 @@ describe("MongoRepository", () => {
       mockCollection.toArray.mockResolvedValue([])
       mockCollection.countDocuments.mockResolvedValue(35)
 
-      const criteria = new Criteria(
-        Filters.fromValues([]),
-        Order.none(),
-        10,
-        5
-      )
+      const criteria = new Criteria(Filters.fromValues([]), Order.none(), 10, 5)
 
       const result = await repository.list(criteria)
 
@@ -323,13 +322,18 @@ describe("MongoRepository", () => {
     })
 
     it("should return nextPag 2 when there are more results on page 1", async () => {
-      mockCollection.toArray.mockResolvedValue([{ _id: "1", id: "1", name: "Test", email: "test@test.com", status: "active" }])
+      mockCollection.toArray.mockResolvedValue([
+        {
+          _id: "1",
+          id: "1",
+          name: "Test",
+          email: "test@test.com",
+          status: "active",
+        },
+      ])
       mockCollection.countDocuments.mockResolvedValue(25)
 
-      const criteria = new Criteria(
-        Filters.fromValues([]),
-        Order.none()
-      )
+      const criteria = new Criteria(Filters.fromValues([]), Order.none())
 
       const result = await repository.list(criteria)
 
@@ -338,15 +342,18 @@ describe("MongoRepository", () => {
     })
 
     it("should return null nextPag on the last page", async () => {
-      mockCollection.toArray.mockResolvedValue([{ _id: "1", id: "1", name: "Test", email: "test@test.com", status: "active" }])
+      mockCollection.toArray.mockResolvedValue([
+        {
+          _id: "1",
+          id: "1",
+          name: "Test",
+          email: "test@test.com",
+          status: "active",
+        },
+      ])
       mockCollection.countDocuments.mockResolvedValue(25)
 
-      const criteria = new Criteria(
-        Filters.fromValues([]),
-        Order.none(),
-        10,
-        3
-      )
+      const criteria = new Criteria(Filters.fromValues([]), Order.none(), 10, 3)
 
       const result = await repository.list(criteria)
 
@@ -418,10 +425,7 @@ describe("MongoRepository", () => {
     it("should apply custom sort when provided", async () => {
       mockCollection.toArray.mockResolvedValue([])
 
-      await repository.many(
-        { status: "active" },
-        { sort: Order.asc("name") }
-      )
+      await repository.many({ status: "active" }, { sort: Order.asc("name") })
 
       expect(mockCollection.sort).toHaveBeenCalledWith({ name: 1 })
     })
@@ -457,11 +461,7 @@ describe("MongoRepository", () => {
   describe("upsert", () => {
     it("should assign a new id when entity has no id", async () => {
       mockCollection.updateOne = jest.fn()
-      const entityWithoutId = new TestEntity(
-        "NoID",
-        "noid@test.com",
-        "pending"
-      )
+      const entityWithoutId = new TestEntity("NoID", "noid@test.com", "pending")
 
       await repository.upsert(entityWithoutId)
 
@@ -471,11 +471,7 @@ describe("MongoRepository", () => {
 
     it("should keep the existing id when entity has one", async () => {
       mockCollection.updateOne = jest.fn()
-      const entity = new TestEntity(
-        "John",
-        "john@test.com",
-        "active"
-      )
+      const entity = new TestEntity("John", "john@test.com", "active")
       entity.assignId("507f1f77bcf86cd799439011")
 
       await repository.upsert(entity)
@@ -486,11 +482,7 @@ describe("MongoRepository", () => {
 
     it("should pass primitives in $set with id from entity", async () => {
       mockCollection.updateOne = jest.fn()
-      const entity = new TestEntity(
-        "John",
-        "john@test.com",
-        "active"
-      )
+      const entity = new TestEntity("John", "john@test.com", "active")
       entity.assignId("507f1f77bcf86cd799439011")
 
       await repository.upsert(entity)
@@ -506,11 +498,7 @@ describe("MongoRepository", () => {
   })
 
   describe("transactions", () => {
-    const entity = new TestEntity(
-      "John",
-      "john@test.com",
-      "active"
-    )
+    const entity = new TestEntity("John", "john@test.com", "active")
 
     it("passes the transaction session to upsert, delete and protected updates", async () => {
       const session = {
@@ -600,9 +588,9 @@ describe("MongoRepository", () => {
       await MongoTransaction.run(async (transaction) => {
         const found = await repository.one(
           { email: "john@test.com" },
-          transaction
+          { transaction }
         )
-        const listed = await repository.list(criteria, transaction)
+        const listed = await repository.list(criteria, { transaction })
 
         expect(found).toBeInstanceOf(TestEntity)
         expect(listed).toEqual({ nextPag: null, count: 0, results: [] })

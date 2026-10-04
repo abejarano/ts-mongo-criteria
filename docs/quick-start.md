@@ -64,15 +64,21 @@ MONGO_DB=development
 
 ```typescript
 import {
+  AggregateRelations,
+  AggregateRoot,
   Criteria,
   Filters,
+  MongoRepository,
+  Operator,
   Order,
   OrderTypes,
-  Operator,
-  MongoRepository,
-  AggregateRoot,
 } from "@abejarano/ts-mongodb-criteria"
+import type { Collection } from "mongodb"
 ```
+
+> **Requisito (2.0.0)**: todo `AggregateRoot` declara `static collectionName(): string` y
+> `static relations(): AggregateRelations` (devuelve `{}` si no tiene relaciones). El
+> repositorio ya no declara `collectionName()`; `super(SuAggregate)` lo toma del aggregate.
 
 ### Step 2: Create a Simple Query
 
@@ -143,6 +149,14 @@ class User extends AggregateRoot {
     }
   }
 
+  static collectionName(): string {
+    return "users"
+  }
+
+  static relations(): AggregateRelations {
+    return {}
+  }
+
   static fromPrimitives(data: Record<string, unknown>): User {
     return new User(data.name, data.email, data.status, data.age)
   }
@@ -166,10 +180,6 @@ class User extends AggregateRoot {
 class UserRepository extends MongoRepository<User> {
   constructor() {
     super(User)
-  }
-
-  collectionName(): string {
-    return "users"
   }
 
   // Create indexes the first time the collection is accessed
@@ -426,13 +436,16 @@ class Product extends AggregateRoot {
     }
   }
 
+  static collectionName(): string {
+    return "products"
+  }
+
+  static relations(): AggregateRelations {
+    return {}
+  }
+
   static fromPrimitives(data: Record<string, unknown>): Product {
-    return new Product(
-      data.name,
-      data.price,
-      data.category,
-      data.status
-    )
+    return new Product(data.name, data.price, data.category, data.status)
   }
 
   // Business methods
@@ -449,10 +462,6 @@ class Product extends AggregateRoot {
 class ProductRepository extends MongoRepository<Product> {
   constructor() {
     super(Product)
-  }
-
-  collectionName(): string {
-    return "products"
   }
 
   protected async ensureIndexes(collection: Collection): Promise<void> {

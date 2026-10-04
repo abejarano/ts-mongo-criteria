@@ -126,12 +126,15 @@ npm install -D typescript@^5.0.0
 
 ```typescript
 import {
+  AggregateRelations,
+  AggregateRoot,
   Criteria,
   Filters,
+  MongoRepository,
   Order,
   Operator,
-  MongoRepository,
 } from "@abejarano/ts-mongodb-criteria"
+import type { Collection } from "mongodb"
 
 // 1. Create filters using a simple Map-based syntax
 const filters = [
@@ -156,13 +159,41 @@ const criteria = new Criteria(
 )
 
 // 3. Use with your MongoDB repository
+// The aggregate declares its collection and relations (relations are always explicit)
+class User extends AggregateRoot {
+  constructor(
+    private name: string,
+    private email: string,
+    private status: string
+  ) {
+    super()
+  }
+
+  static collectionName(): string {
+    return "users"
+  }
+
+  static relations(): AggregateRelations {
+    return {}
+  }
+
+  static fromPrimitives(data: any): User {
+    return new User(data.name, data.email, data.status)
+  }
+
+  toPrimitives(): any {
+    return {
+      id: this.getId(),
+      name: this.name,
+      email: this.email,
+      status: this.status,
+    }
+  }
+}
+
 class UserRepository extends MongoRepository<User> {
   constructor() {
     super(User)
-  }
-
-  collectionName(): string {
-    return "users"
   }
 
   // Create indexes the first time the collection is accessed
@@ -181,9 +212,9 @@ Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 
 MongoRepository provides ready-to-use public methods for repositories that extend it:
 
-- `list(criteria, transaction?)` for paginated queries
-- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort? }`
-- `one(filter, transaction?)` to fetch a single entity
+- `list(criteria, options?)` for paginated queries, with optional `{ transaction?, relations? }`
+- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort?, relations? }`
+- `one(filter, options?)` to fetch a single entity, with optional `{ transaction?, relations? }`
 - `upsert(entity, transaction?)` to persist an aggregate
   Internal helpers are private, so repositories should call these public methods
   directly.
@@ -310,6 +341,7 @@ See the full CLI guide here: `docs/mongo-migrations.md`.
 - **[🔧 Operators Reference](./docs/operators.md)** - Complete guide to all available operators and their usage
 - **[⚡ Performance Guide](./docs/performance.md)** - Optimization strategies and best practices
 - **[🔄 Migration Guide](./docs/migration.md)** - Migrate from other query systems to Criteria pattern
+- **[🔗 Reference Relations](./docs/reference-relations.md)** - Explicit relation selection via AggregateRoot, manual `_id` references, hydrated entities, `fields` projection, inverse relations (ONE_TO_ONE/ONE_TO_MANY)
 - **[🗄️ MongoDB Migrations (CLI)](./docs/mongo-migrations.md)** - Run database migrations with migrate-mongo
 
 ### 🎯 Key Concepts
