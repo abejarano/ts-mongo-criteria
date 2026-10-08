@@ -2,11 +2,10 @@ import { MongoCriteriaConverter, MongoQuery } from "./MongoCriteriaConverter"
 import { MongoClientFactory } from "./MongoClientFactory"
 import { MongoRelationResolver } from "./MongoRelationResolver"
 import { MongoTransaction } from "./MongoTransaction"
-import { Criteria, Order, Paginate } from "../criteria"
+import { Criteria, Paginate } from "../criteria"
 import {
   AggregateRoot,
   AggregateRootClass,
-  AggregateRelationSelection,
   InvalidArgumentError,
   isInverseRelation,
   referenceOf,
@@ -19,7 +18,7 @@ import {
   UpdateFilter,
 } from "mongodb"
 import { MongoSort } from "../types"
-import { MongoReadOptions } from "./IRepository"
+import { MongoManyOptions, MongoReadOptions } from "./IRepository"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
   private static indexRegistry = new Set<string>()
@@ -71,14 +70,12 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   }
 
   /** Finds multiple entities and automatically resolves selected relations. */
-  public async many(
-    filter: object,
-    options?: {
-      transaction?: MongoTransaction
-      sort?: Order
-      relations?: AggregateRelationSelection[]
+  public async many(filter: object, options?: MongoManyOptions): Promise<T[]> {
+    const limit = options?.limit
+    if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
+      throw new InvalidArgumentError("The many limit must be a positive integer")
     }
-  ): Promise<T[]> {
+
     const collection = await this.collection<Document>()
 
     let order: MongoSort = { _id: -1 }
@@ -96,10 +93,13 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     const selected = this.resolver.resolve(options?.relations)
 
     if (selected.length === 0) {
-      const documents = await collection
+      const cursor = collection
         .find(filter, session ? { session } : undefined)
         .sort(order)
-        .toArray()
+
+      if (limit !== undefined) cursor.limit(limit)
+
+      const documents = await cursor.toArray()
       return documents.map((document) => this.hydrate(document))
     }
 
@@ -108,6 +108,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
         [
           { $match: filter },
           { $sort: order },
+          ...(limit === undefined ? [] : [{ $limit: limit }]),
           ...this.resolver.buildStages(selected),
         ],
         session ? { session } : undefined
