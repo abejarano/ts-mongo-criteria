@@ -9,15 +9,13 @@ export interface MongoReadOptions {
   relations?: AggregateRelationSelection[]
 }
 
+export interface MongoManyOptions extends MongoReadOptions {
+  sort?: Order
+  limit?: number
+}
+
 export interface IRepository<T extends AggregateRoot> {
-  many(
-    filter: object,
-    options?: {
-      transaction?: MongoTransaction
-      sort?: Order
-      relations?: AggregateRelationSelection[]
-    }
-  ): Promise<T[]>
+  many(filter: object, options?: MongoManyOptions): Promise<T[]>
 
   one(
     filter: object,
