@@ -19,6 +19,7 @@ import {
 } from "mongodb"
 import { MongoSort } from "../types"
 import { MongoManyOptions, MongoReadOptions } from "./IRepository"
+import { buildMongoSort } from "./buildMongoSort"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
   private static indexRegistry = new Set<string>()
@@ -73,21 +74,14 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   public async many(filter: object, options?: MongoManyOptions): Promise<T[]> {
     const limit = options?.limit
     if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
-      throw new InvalidArgumentError("The many limit must be a positive integer")
+      throw new InvalidArgumentError(
+        "The many limit must be a positive integer"
+      )
     }
 
     const collection = await this.collection<Document>()
 
-    let order: MongoSort = { _id: -1 }
-    if (options?.sort?.hasOrder()) {
-      order = {
-        [options.sort.orderBy.value === "id"
-          ? "_id"
-          : options.sort.orderBy.value]: options.sort.orderType.isAsc()
-          ? 1
-          : -1,
-      }
-    }
+    const order: MongoSort = buildMongoSort(options?.sort)
 
     const session = MongoTransaction.sessionFor(options?.transaction)
     const selected = this.resolver.resolve(options?.relations)

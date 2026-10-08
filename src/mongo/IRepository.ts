@@ -10,7 +10,11 @@ export interface MongoReadOptions {
 }
 
 export interface MongoManyOptions extends MongoReadOptions {
-  sort?: Order
+  /**
+   * One order, or several orders applied in sequence as a compound sort.
+   * The database applies the order before `limit`.
+   */
+  sort?: Order | Order[]
   limit?: number
 }
 

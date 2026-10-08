@@ -1,5 +1,6 @@
 import { Criteria, Filter, Filters, Operator, Order } from "../criteria"
 import { MongoFilter, MongoFilterBetween, MongoSort } from "../types"
+import { buildMongoSort } from "./buildMongoSort"
 
 export interface MongoQuery {
   filter: MongoFilter
@@ -66,10 +67,7 @@ export class MongoCriteriaConverter {
   }
 
   protected generateSort(order: Order): MongoSort {
-    return <MongoSort>{
-      [order.orderBy.value === "id" ? "_id" : order.orderBy.value]:
-        order.orderType.isAsc() ? 1 : -1,
-    }
+    return buildMongoSort(order)
   }
 
   private equalFilter(filter: Filter): MongoFilter {

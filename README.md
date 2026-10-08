@@ -213,11 +213,28 @@ Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 MongoRepository provides ready-to-use public methods for repositories that extend it:
 
 - `list(criteria, options?)` for paginated queries, with optional `{ transaction?, relations? }`
-- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort?, relations? }`
+- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort?, limit?, relations? }`
 - `one(filter, options?)` to fetch a single entity, with optional `{ transaction?, relations? }`
 - `upsert(entity, transaction?)` to persist an aggregate
   Internal helpers are private, so repositories should call these public methods
   directly.
+
+`sort` accepts one `Order` or an array of them. The array is applied in sequence,
+so the sort is compound and the database resolves it **before** `limit`, which is
+what a deterministic top-N needs:
+
+```typescript
+// Newest first, ties broken by ascending urn, capped at 3 by the database.
+const newestApproved = await visualReferenceRepository.many(
+  {
+    workspace,
+    accountConnection,
+    decision: "approved",
+    source: "approved_design",
+  },
+  { sort: [Order.desc("updatedAt"), Order.asc("urn")], limit: 3 }
+)
+```
 
 If you need a repository interface in your app, extend `IRepository<T>` so your
 custom interfaces stay aligned with the library return types:
@@ -272,7 +289,7 @@ async deactivateUser(id: string, tx: MongoTransaction): Promise<void> {
 MongoDB transactions require a replica set or a sharded cluster; standalone
 MongoDB instances do not support them. This initial API applies the transaction
 context to `upsert`, `delete`, protected `updateOne`, `one`, `list`, and `many`.
-Pass `tx` as the second argument to `list`, and inside the options object (`{ transaction: tx }`) to `many`.
+Pass `tx` inside the options object (`{ transaction: tx }`) to `list`, `many` and `one`.
 
 **Your First Query in 30 Seconds:**
 
