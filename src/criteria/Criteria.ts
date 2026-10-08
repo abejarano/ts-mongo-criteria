@@ -1,5 +1,6 @@
 import { Filters } from "./Filters"
 import { Order } from "./Order"
+import { InvalidArgumentError } from "../AggregateRoot"
 
 export class Criteria {
   readonly filters: Filters
@@ -15,11 +16,13 @@ export class Criteria {
     currentPage: number = 1
   ) {
     if (!Number.isInteger(limit) || limit <= 0) {
-      throw new Error("CRITERIA_LIMIT_MUST_BE_A_POSITIVE_INTEGER")
+      throw new InvalidArgumentError(
+        "CRITERIA_LIMIT_MUST_BE_A_POSITIVE_INTEGER"
+      )
     }
 
     if (!Number.isInteger(currentPage) || currentPage <= 0) {
-      throw new Error("CRITERIA_PAGE_MUST_BE_A_POSITIVE_INTEGER")
+      throw new InvalidArgumentError("CRITERIA_PAGE_MUST_BE_A_POSITIVE_INTEGER")
     }
 
     this.filters = filters

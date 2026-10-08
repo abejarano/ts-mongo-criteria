@@ -6,7 +6,12 @@ import { ObjectId } from "mongodb"
 export class InvalidArgumentError extends Error {}
 
 export interface AggregateRootClass<T extends AggregateRoot = AggregateRoot> {
-  new (...args: any[]): T
+  /**
+   * Keeps this contract tied to the static side of an AggregateRoot class
+   * without requiring its constructor to be public. Repositories hydrate
+   * aggregates exclusively through fromPrimitives().
+   */
+  readonly prototype: T
   fromPrimitives(data: Record<string, unknown>): T
   collectionName(): string
   relations(): AggregateRelations

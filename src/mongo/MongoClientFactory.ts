@@ -1,4 +1,5 @@
 import { MongoClient } from "mongodb"
+import { InvalidArgumentError } from "../AggregateRoot"
 
 export class MongoClientFactory {
   private static client: MongoClient | null = null
@@ -33,7 +34,7 @@ export class MongoClientFactory {
     const uri = process.env.MONGO_URI
 
     if (!uri) {
-      throw new Error(
+      throw new InvalidArgumentError(
         "MONGO_URI environment variables are missing to connect to the MongoDB server"
       )
     }
