@@ -212,9 +212,9 @@ Use the `collection` argument inside `ensureIndexes` to avoid recursion.
 
 MongoRepository provides ready-to-use public methods for repositories that extend it:
 
-- `list(criteria, options?)` for paginated queries, with optional `{ transaction?, relations? }`
-- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort?, limit?, relations? }`
-- `one(filter, options?)` to fetch a single entity, with optional `{ transaction?, relations? }`
+- `list(criteria, options?)` for paginated queries, with optional `{ transaction?, relations?, joins? }`
+- `many(filter, options?)` to fetch multiple entities matching a filter, with optional `{ transaction?, sort?, limit?, relations?, joins? }`
+- `one(filter, options?)` to fetch a single entity, with optional `{ transaction?, relations?, joins? }`
 - `upsert(entity, transaction?)` to persist an aggregate
   Internal helpers are private, so repositories should call these public methods
   directly.
@@ -359,6 +359,7 @@ See the full CLI guide here: `docs/mongo-migrations.md`.
 - **[⚡ Performance Guide](./docs/performance.md)** - Optimization strategies and best practices
 - **[🔄 Migration Guide](./docs/migration.md)** - Migrate from other query systems to Criteria pattern
 - **[🔗 Reference Relations](./docs/reference-relations.md)** - Explicit relation selection via AggregateRoot, manual `_id` references, hydrated entities, `fields` projection, inverse relations (ONE_TO_ONE/ONE_TO_MANY)
+- **[🔀 Query-time Joins](./docs/query-time-joins.md)** - Join arbitrary collections using one or more field pairs, with examples and result handling
 - **[🗄️ MongoDB Migrations (CLI)](./docs/mongo-migrations.md)** - Run database migrations with migrate-mongo
 
 ### 🎯 Key Concepts
