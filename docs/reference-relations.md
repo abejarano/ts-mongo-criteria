@@ -306,7 +306,7 @@ Las relaciones inversas nunca escriben referencia: la FK vive en el documento de
 - ONE_TO_ONE inverso: `{ brandBrain: { entity, inverseOf } }`.
 - `ONE_TO_MANY`: `{ brandBrains: { entity, inverseOf, many: true } }`.
 - Explicit `relations` selection per query (not automatic).
-- `_id`-based reference (manual reference). If you need business-id references (`id`, `code`), this version requires storing that as the `_id` of the target document or using a separate mechanism.
+- `_id`-based reference (manual reference). For business keys or multiple field pairs, use [query-time joins](./query-time-joins.md).
 - `fields` projection (opt-in, requires MongoDB 5.0+ for concise form; simple form works on 3.6+).
 - Hydration of related entities into domain instances (single instance or array).
 - Multiple relations, including several declarations pointing to the same class (desambiguadas con `name`).
@@ -333,3 +333,56 @@ db.orders.updateMany({ customerId: { $type: "string" } }, [
 ```
 
 Then update `AggregateRoot.relations()` to reference the class (`CustomerAggregateRoot` instead of `{ collection: "customers", foreignField: "id" }`), and update queries to pass `{ relations: [{ entity: CustomerAggregateRoot }] }`.
+
+## Query-time joins on arbitrary fields
+
+For the full API, examples and result handling, see [Query-time Joins](./query-time-joins.md).
+
+Use `joins` to join any collection without declaring an aggregate relation. Each
+entry in `on` compares a field of the root document with a field in the target;
+all comparisons must match. Field values retain their MongoDB types.
+
+```typescript
+const professors = await repository.many(
+  { profile: "professor", active: true },
+  {
+    sort: [Order.desc("schoolYear"), Order.asc("createdAt")],
+    joins: [
+      {
+        from: "teacher_assignments",
+        as: "assignment",
+        on: [
+          { localField: "userId", foreignField: "userId" },
+          { localField: "scopeId", foreignField: "nucleusId" },
+          { localField: "schoolYear", foreignField: "schoolYear" },
+        ],
+        fields: ["disciplines"],
+        many: false,
+      },
+    ],
+  }
+)
+```
+
+The same option is available on `one` and `list`. `MongoJoin` and
+`MongoJoinField` are exported public types. A singular join (`many: false`, the
+default) supplies the first matching raw document or `null`; `many: true`
+supplies an array, including `[]` when nothing matches. No order is guaranteed
+for the first match. The root aggregate's `fromPrimitives()` must read the alias
+and retain or transform it if callers need the result:
+
+```typescript
+const assignment = data.assignment as
+  | { disciplines: string[] }
+  | null
+  | undefined
+const disciplines = assignment?.disciplines ?? []
+```
+
+Omit `fields` to return complete documents. When supplied, only the listed fields
+are returned: include `_id` explicitly if needed; an empty list returns empty
+documents. Join aliases must be unique and must not match a selected relation.
+Joins only affect reads; the application manages and persists the join fields.
+Filtering, sorting and pagination happen before joins, and the pagination count
+does not include them. Add a suitable index on the target collection's join
+fields, such as `{ userId: 1, nucleusId: 1, schoolYear: 1 }` for this example.

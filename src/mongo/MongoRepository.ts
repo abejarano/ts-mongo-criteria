@@ -20,6 +20,7 @@ import {
 import { MongoSort } from "../types"
 import { MongoManyOptions, MongoReadOptions } from "./IRepository"
 import { buildMongoSort } from "./buildMongoSort"
+import { buildJoinStages } from "./MongoJoinResolver"
 
 export abstract class MongoRepository<T extends AggregateRoot> {
   private static indexRegistry = new Set<string>()
@@ -45,9 +46,10 @@ export abstract class MongoRepository<T extends AggregateRoot> {
   ): Promise<T | null> {
     const session = MongoTransaction.sessionFor(options?.transaction)
     const selected = this.resolver.resolve(options?.relations)
+    const joinStages = buildJoinStages(options?.joins, selected)
     const collection = await this.collection<Document>()
 
-    if (selected.length === 0) {
+    if (selected.length === 0 && joinStages.length === 0) {
       const result = session
         ? await collection.findOne(filter, { session })
         : await collection.findOne(filter)
@@ -60,6 +62,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
           { $match: filter },
           { $limit: 1 },
           ...this.resolver.buildStages(selected),
+          ...joinStages,
         ],
         session ? { session } : undefined
       )
@@ -85,8 +88,9 @@ export abstract class MongoRepository<T extends AggregateRoot> {
 
     const session = MongoTransaction.sessionFor(options?.transaction)
     const selected = this.resolver.resolve(options?.relations)
+    const joinStages = buildJoinStages(options?.joins, selected)
 
-    if (selected.length === 0) {
+    if (selected.length === 0 && joinStages.length === 0) {
       const cursor = collection
         .find(filter, session ? { session } : undefined)
         .sort(order)
@@ -104,6 +108,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
           { $sort: order },
           ...(limit === undefined ? [] : [{ $limit: limit }]),
           ...this.resolver.buildStages(selected),
+          ...joinStages,
         ],
         session ? { session } : undefined
       )
@@ -217,8 +222,9 @@ export abstract class MongoRepository<T extends AggregateRoot> {
     const collection = await this.collection<Document>()
     const session = MongoTransaction.sessionFor(options?.transaction)
     const selected = this.resolver.resolve(options?.relations)
+    const joinStages = buildJoinStages(options?.joins, selected)
 
-    if (selected.length === 0) {
+    if (selected.length === 0 && joinStages.length === 0) {
       const results = await collection
         .find(query.filter as any, session ? { session } : undefined)
         .sort(query.sort)
@@ -237,6 +243,7 @@ export abstract class MongoRepository<T extends AggregateRoot> {
           { $skip: query.skip },
           { $limit: query.limit },
           ...this.resolver.buildStages(selected),
+          ...joinStages,
         ],
         session ? { session } : undefined
       )
